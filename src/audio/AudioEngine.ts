@@ -18,8 +18,8 @@ export class AudioEngine {
   private onTrackEndedCallback: (() => void) | null = null;
 
   // Master volumes
-  private metronomeVolume: number = 0.8;
-  private musicVolume: number = 0.5;
+  private metronomeVolume: number = 1.3;
+  private musicVolume: number = 0.35;
 
   // Synthesizer nodes/gains for mixing
   private masterGain: GainNode | null = null;
@@ -380,6 +380,56 @@ export class AudioEngine {
           oscCh.start(time);
           oscCh.stop(time + 0.32);
         });
+        break;
+
+      case 'sub_boom':
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(90 * pitchMultiplier, time);
+        osc.frequency.exponentialRampToValueAtTime(32, time + 0.25);
+        gainNode.gain.setValueAtTime(volume * 1.8, time);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.32);
+        osc.start(time);
+        osc.stop(time + 0.35);
+        break;
+
+      case 'double_bass':
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(140 * pitchMultiplier, time);
+        osc.frequency.exponentialRampToValueAtTime(45, time + 0.08);
+        gainNode.gain.setValueAtTime(volume * 1.4, time);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+        osc.start(time);
+        osc.stop(time + 0.12);
+
+        const time2 = time + 0.08;
+        const oscDb2 = this.ctx.createOscillator();
+        const gainDb2 = this.ctx.createGain();
+        oscDb2.type = 'sine';
+        oscDb2.frequency.setValueAtTime(120 * pitchMultiplier, time2);
+        oscDb2.frequency.exponentialRampToValueAtTime(40, time2 + 0.08);
+        gainDb2.gain.setValueAtTime(volume * 1.2, time2);
+        gainDb2.gain.exponentialRampToValueAtTime(0.001, time2 + 0.1);
+        oscDb2.connect(gainDb2);
+        gainDb2.connect(this.metronomeGain);
+        oscDb2.start(time2);
+        oscDb2.stop(time2 + 0.12);
+        break;
+
+      case 'hihat':
+        const hhSource = this.createNoiseBufferNode();
+        if (hhSource) {
+          const hhGain = this.ctx.createGain();
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'highpass';
+          filter.frequency.setValueAtTime(8000, time);
+          hhSource.connect(filter);
+          filter.connect(hhGain);
+          hhGain.connect(this.metronomeGain);
+          hhGain.gain.setValueAtTime(volume * 0.9, time);
+          hhGain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+          hhSource.start(time);
+          hhSource.stop(time + 0.06);
+        }
         break;
 
     }

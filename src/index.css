@@ -706,11 +706,30 @@ body {
   border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.04);
   background: rgba(255, 255, 255, 0.018);
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease, opacity 0.16s ease;
+}
+
+.media-row:active {
+  cursor: grabbing;
 }
 
 .media-row.active {
   border-color: rgba(167, 139, 250, 0.34);
   background: rgba(139, 92, 246, 0.13);
+}
+
+.media-row.dragging {
+  opacity: 0.4;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.01) !important;
+}
+
+.media-row.drag-over {
+  border-color: #34d399 !important;
+  background: rgba(52, 211, 153, 0.1) !important;
+  transform: scale(1.02);
 }
 
 .media-main {
@@ -1422,16 +1441,25 @@ body {
   pointer-events: auto;
   flex-direction: column;
   gap: 0.15rem;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  background:
-    radial-gradient(circle at 50% 35%, rgba(52, 211, 153, 0.12), transparent 45%),
-    rgba(3, 7, 18, 0.58) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background: rgba(15, 23, 42, 0.38) !important;
   border: 2px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow:
-    0 0 0 0.18rem rgba(52, 211, 153, 0.04),
-    0 0.7rem 1.7rem rgba(0, 0, 0, 0.38),
-    inset 0 0 1.4rem rgba(52, 211, 153, 0.06) !important;
+    0 0.5rem 1.5rem rgba(0, 0, 0, 0.25),
+    inset 0 0 1rem rgba(255, 255, 255, 0.03) !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.visualizer-stage .foot-pad.active {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(52, 211, 153, 0.28), transparent 50%),
+    rgba(16, 185, 129, 0.18) !important;
+  border-color: rgba(52, 211, 153, 0.75) !important;
+  box-shadow:
+    0 0 1.6rem rgba(52, 211, 153, 0.35),
+    inset 0 0 1rem rgba(52, 211, 153, 0.2) !important;
+  transform: scale(1.05);
 }
 
 .visualizer-stage .foot-pad svg {

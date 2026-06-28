@@ -10,10 +10,10 @@ const DEFAULT_TRACKS: Track[] = [];
 
 export default function App() {
   const [bpm, setBpm] = useState(180);
-  const [soundType, setSoundType] = useState<BeatSoundType>('tick');
+  const [soundType, setSoundType] = useState<BeatSoundType>('bass');
   const [musicStyle, setMusicStyle] = useState<MusicStyle>('none');
-  const [metronomeVolume, setMetronomeVolume] = useState(0.8);
-  const [musicVolume, setMusicVolume] = useState(0.4);
+  const [metronomeVolume, setMetronomeVolume] = useState(1.3);
+  const [musicVolume, setMusicVolume] = useState(0.35);
   const [isPlaying, setIsPlaying] = useState(false);
   const [beatTrigger, setBeatTrigger] = useState(0);
   const [combo, setCombo] = useState(0);

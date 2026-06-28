@@ -33,12 +33,15 @@ interface ControlPanelProps {
 const BPM_PRESETS = [160, 180, 200, 220];
 
 const SOUND_OPTIONS: { value: BeatSoundType; label: string }[] = [
+  { value: 'bass', label: 'Deep Bass (默认)' },
+  { value: 'sub_boom', label: '808 Sub Boom' },
+  { value: 'double_bass', label: 'Double Kick' },
   { value: 'tick', label: 'Clear Tick' },
   { value: 'drum', label: 'Kick' },
-  { value: 'bass', label: 'Deep Bass' },
   { value: 'woodblock', label: 'Wood' },
   { value: 'cowbell', label: 'Bell' },
   { value: 'chime', label: 'Chime' },
+  { value: 'hihat', label: 'Hi-Hat' },
 ];
 
 const VISUAL_OPTIONS: { value: VisualStyle; label: string }[] = [
@@ -84,6 +87,11 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   const [bpmInput, setBpmInput] = useState(String(bpm));
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingBpmValue, setEditingBpmValue] = useState<string>('');
+  
+  // Drag and drop states for reordering
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [draggedItemType, setDraggedItemType] = useState<'audio' | 'video' | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   useEffect(() => {
     setBpmInput(String(bpm));
@@ -142,6 +150,62 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         setBpm(nextBpm);
       }
     }
+  };
+
+  const handleDragStart = (type: 'audio' | 'video', index: number) => {
+    setDraggedItemIndex(index);
+    setDraggedItemType(type);
+  };
+
+  const handleDragOver = (e: React.DragEvent, type: 'audio' | 'video', index: number) => {
+    e.preventDefault();
+    if (draggedItemType !== type) return;
+    if (draggedItemIndex === index) return;
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (type: 'audio' | 'video', targetIndex: number) => {
+    if (draggedItemIndex === null || draggedItemType !== type) return;
+    
+    if (type === 'audio') {
+      const newList = [...customPlaylist];
+      const [draggedItem] = newList.splice(draggedItemIndex, 1);
+      newList.splice(targetIndex, 0, draggedItem);
+      setCustomPlaylist(newList);
+      
+      // Update active track index
+      if (currentTrackIndex === draggedItemIndex) {
+        setCurrentTrackIndex(targetIndex);
+      } else if (currentTrackIndex > draggedItemIndex && currentTrackIndex <= targetIndex) {
+        setCurrentTrackIndex(currentTrackIndex - 1);
+      } else if (currentTrackIndex < draggedItemIndex && currentTrackIndex >= targetIndex) {
+        setCurrentTrackIndex(currentTrackIndex + 1);
+      }
+    } else {
+      const newList = [...videoPlaylist];
+      const [draggedItem] = newList.splice(draggedItemIndex, 1);
+      newList.splice(targetIndex, 0, draggedItem);
+      setVideoPlaylist(newList);
+      
+      // Update active video index
+      if (currentVideoIndex === draggedItemIndex) {
+        setCurrentVideoIndex(targetIndex);
+      } else if (currentVideoIndex > draggedItemIndex && currentVideoIndex <= targetIndex) {
+        setCurrentVideoIndex(currentVideoIndex - 1);
+      } else if (currentVideoIndex < draggedItemIndex && currentVideoIndex >= targetIndex) {
+        setCurrentVideoIndex(currentVideoIndex + 1);
+      }
+    }
+    
+    setDraggedItemIndex(null);
+    setDraggedItemType(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItemIndex(null);
+    setDraggedItemType(null);
+    setDragOverIndex(null);
   };
 
   const commitBpmInput = () => {
@@ -407,52 +471,68 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           {mediaItems.length === 0 ? (
             <div className="media-empty">Upload audio or video files here.</div>
           ) : (
-            mediaItems.map((item) => (
-              <div
-                key={`${item.type}-${item.id}`}
-                className={`media-row ${item.active ? 'active' : ''}`}
-                onDoubleClick={() => playMediaItem(item)}
-              >
-                <button type="button" className="media-main" onClick={() => playMediaItem(item)}>
-                  <span className="media-type">{item.type === 'audio' ? 'M' : 'V'}</span>
-                  <span className="media-name">{item.name}</span>
-                  {item.bpm && (
-                    editingItemId === `${item.type}-${item.id}` ? (
-                      <input
-                        type="number"
-                        className="media-bpm-input"
-                        value={editingBpmValue}
-                        onChange={(e) => setEditingBpmValue(e.target.value)}
-                        onBlur={() => commitInlineBpm(item)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            commitInlineBpm(item);
-                          } else if (e.key === 'Escape') {
-                            setEditingItemId(null);
-                          }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        autoFocus
-                        min={50}
-                        max={350}
-                      />
-                    ) : (
-                      <span 
-                        className="media-bpm editable" 
-                        onClick={(e) => startEditingBpm(item, e)}
-                        title="点击行内修改 BPM"
-                        style={{ cursor: 'pointer', opacity: 0.85 }}
-                      >
-                        {item.bpm} ✏️
-                      </span>
-                    )
-                  )}
-                </button>
-                <button type="button" className="media-remove" onClick={() => removeMediaItem(item)}>
-                  x
-                </button>
-              </div>
-            ))
+            mediaItems.map((item) => {
+              const isDragging = draggedItemIndex === item.index && draggedItemType === item.type;
+              const isHoveredOver = dragOverIndex === item.index && draggedItemType === item.type;
+              
+              return (
+                <div
+                  key={`${item.type}-${item.id}`}
+                  className={`media-row ${item.active ? 'active' : ''} ${isDragging ? 'dragging' : ''} ${isHoveredOver ? 'drag-over' : ''}`}
+                  draggable
+                  onDragStart={() => handleDragStart(item.type, item.index)}
+                  onDragOver={(e) => handleDragOver(e, item.type, item.index)}
+                  onDrop={() => handleDrop(item.type, item.index)}
+                  onDragEnd={handleDragEnd}
+                  onDoubleClick={() => playMediaItem(item)}
+                  style={{
+                    opacity: isDragging ? 0.4 : 1.0,
+                    cursor: 'grab',
+                  }}
+                >
+                  <button type="button" className="media-main" onClick={() => playMediaItem(item)}>
+                    <span className="media-type" style={{ fontSize: '0.58rem', opacity: 0.6 }}>
+                      {item.type === 'audio' ? '🎵' : '🎬'}
+                    </span>
+                    <span className="media-name">{item.name}</span>
+                    {item.bpm && (
+                      editingItemId === `${item.type}-${item.id}` ? (
+                        <input
+                          type="number"
+                          className="media-bpm-input"
+                          value={editingBpmValue}
+                          onChange={(e) => setEditingBpmValue(e.target.value)}
+                          onBlur={() => commitInlineBpm(item)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              commitInlineBpm(item);
+                            } else if (e.key === 'Escape') {
+                              setEditingItemId(null);
+                            }
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          autoFocus
+                          min={50}
+                          max={350}
+                        />
+                      ) : (
+                        <span 
+                          className="media-bpm editable" 
+                          onClick={(e) => startEditingBpm(item, e)}
+                          title="点击行内修改 BPM"
+                          style={{ cursor: 'pointer', opacity: 0.85 }}
+                        >
+                          {item.bpm} ✏️
+                        </span>
+                      )
+                    )}
+                  </button>
+                  <button type="button" className="media-remove" onClick={() => removeMediaItem(item)}>
+                    x
+                  </button>
+                </div>
+              );
+            })
           )}
         </div>
       </section>

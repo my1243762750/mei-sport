@@ -249,19 +249,16 @@ export const ComboGame: React.FC<ComboGameProps> = ({
             if (e.type === 'mousedown' && 'ontouchstart' in window) return;
             handleTap('L', e);
           }}
-          className={`foot-pad left-pad ${!isPlaying ? 'disabled-mode' : ''}`}
+          className={`foot-pad left-pad ${isLeftActive ? 'active' : ''} ${!isPlaying ? 'disabled-mode' : ''}`}
           style={{
-            border: '2.5px solid rgba(255, 255, 255, 0.045)',
-            background: 'rgba(0, 0, 0, 0.15)',
-            boxShadow: 'none',
-            opacity: isPlaying && !isLeftActive ? 0.72 : 1.0,
+            opacity: isPlaying && !isLeftActive ? 0.65 : 1.0,
           }}
         >
           <FootprintsIcon active={isLeftActive} />
           <span 
             className="foot-label"
             style={{
-              color: isLeftActive ? '#ffffff' : 'rgba(255, 255, 255, 0.25)',
+              color: isLeftActive ? '#ffffff' : 'rgba(255, 255, 255, 0.35)',
               fontWeight: 800,
               textShadow: 'none',
             }}
@@ -277,19 +274,16 @@ export const ComboGame: React.FC<ComboGameProps> = ({
             if (e.type === 'mousedown' && 'ontouchstart' in window) return;
             handleTap('R', e);
           }}
-          className={`foot-pad right-pad ${!isPlaying ? 'disabled-mode' : ''}`}
+          className={`foot-pad right-pad ${isRightActive ? 'active' : ''} ${!isPlaying ? 'disabled-mode' : ''}`}
           style={{
-            border: '2.5px solid rgba(255, 255, 255, 0.045)',
-            background: 'rgba(0, 0, 0, 0.15)',
-            boxShadow: 'none',
-            opacity: isPlaying && !isRightActive ? 0.72 : 1.0,
+            opacity: isPlaying && !isRightActive ? 0.65 : 1.0,
           }}
         >
           <FootprintsIconMirrored active={isRightActive} />
           <span 
             className="foot-label"
             style={{
-              color: isRightActive ? '#ffffff' : 'rgba(255, 255, 255, 0.25)',
+              color: isRightActive ? '#ffffff' : 'rgba(255, 255, 255, 0.35)',
               fontWeight: 800,
               textShadow: 'none',
             }}

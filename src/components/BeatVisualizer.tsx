@@ -1047,7 +1047,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
       ctx.textBaseline = 'middle';
       ctx.fillStyle = isVideoMode 
         ? (isHoveringCoreRef.current ? '#ecfdf5' : '#34d399') 
-        : getBpmDarkTextColor(bpm);
+        : (isHoveringCoreRef.current ? '#ffffff' : (isPlaying ? getBpmThemeColor(bpm, 1.0) : '#ffffff'));
       ctx.font = `800 ${isVideoMode ? 44 : 38}px Rajdhani, system-ui, sans-serif`;
 
       let mainText = '';
@@ -1066,8 +1066,8 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
         mainText = isPlaying ? 'RUNNING' : 'READY';
         subText = isPlaying ? 'METRIC SYNCED' : 'SYSTEM IDLE';
         subColor = isPlaying 
-          ? (isVideoMode ? '#34d399' : getBpmThemeColor(bpm, 0.9))
-          : 'rgba(255, 255, 255, 0.4)';
+          ? (isVideoMode ? '#34d399' : getBpmThemeColor(bpm, 0.95))
+          : 'rgba(255, 255, 255, 0.75)';
       }
 
       ctx.fillText(mainText, centerX, centerY - 6);
