@@ -82,6 +82,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   setVideoVolume,
 }) => {
   const [bpmInput, setBpmInput] = useState(String(bpm));
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingBpmValue, setEditingBpmValue] = useState<string>('');
 
   useEffect(() => {
     setBpmInput(String(bpm));
@@ -107,6 +109,40 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
     return [...audio, ...video];
   }, [customPlaylist, currentTrackIndex, currentVideoIndex, videoPlaylist, visualStyle]);
+
+  const startEditingBpm = (item: typeof mediaItems[0], e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingItemId(`${item.type}-${item.id}`);
+    setEditingBpmValue(String(item.bpm ?? 180));
+  };
+
+  const commitInlineBpm = (item: typeof mediaItems[0]) => {
+    const nextBpm = Number.parseInt(editingBpmValue, 10);
+    setEditingItemId(null);
+    if (Number.isNaN(nextBpm) || nextBpm < 50 || nextBpm > 350) {
+      return;
+    }
+    
+    if (item.type === 'audio') {
+      setCustomPlaylist((prev) =>
+        prev.map((track) =>
+          track.id === item.id ? { ...track, originalBpm: nextBpm } : track
+        )
+      );
+      if (item.active) {
+        setBpm(nextBpm);
+      }
+    } else {
+      setVideoPlaylist((prev) =>
+        prev.map((track) =>
+          track.id === item.id ? { ...track, detectedBpm: nextBpm } : track
+        )
+      );
+      if (item.active) {
+        setBpm(nextBpm);
+      }
+    }
+  };
 
   const commitBpmInput = () => {
     const next = Number.parseInt(bpmInput, 10);
@@ -380,7 +416,37 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 <button type="button" className="media-main" onClick={() => playMediaItem(item)}>
                   <span className="media-type">{item.type === 'audio' ? 'M' : 'V'}</span>
                   <span className="media-name">{item.name}</span>
-                  {item.bpm && <span className="media-bpm">{item.bpm}</span>}
+                  {item.bpm && (
+                    editingItemId === `${item.type}-${item.id}` ? (
+                      <input
+                        type="number"
+                        className="media-bpm-input"
+                        value={editingBpmValue}
+                        onChange={(e) => setEditingBpmValue(e.target.value)}
+                        onBlur={() => commitInlineBpm(item)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            commitInlineBpm(item);
+                          } else if (e.key === 'Escape') {
+                            setEditingItemId(null);
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                        min={50}
+                        max={350}
+                      />
+                    ) : (
+                      <span 
+                        className="media-bpm editable" 
+                        onClick={(e) => startEditingBpm(item, e)}
+                        title="点击行内修改 BPM"
+                        style={{ cursor: 'pointer', opacity: 0.85 }}
+                      >
+                        {item.bpm} ✏️
+                      </span>
+                    )
+                  )}
                 </button>
                 <button type="button" className="media-remove" onClick={() => removeMediaItem(item)}>
                   x

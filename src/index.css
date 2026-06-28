@@ -753,6 +753,42 @@ body {
   font-family: 'Rajdhani', sans-serif;
   font-size: 0.68rem;
   font-weight: 900;
+  transition: color 0.15s ease;
+}
+
+.media-bpm.editable:hover {
+  color: #34d399;
+  text-shadow: 0 0 5px rgba(52, 211, 153, 0.4);
+}
+
+.media-bpm-input {
+  width: 2.4rem;
+  height: 0.95rem;
+  background: rgba(3, 7, 18, 0.92);
+  border: 1px solid rgba(52, 211, 153, 0.6);
+  border-radius: 0.2rem;
+  color: #34d399;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  outline: none;
+  z-index: 5;
+}
+
+/* Hide spin buttons for Chrome/Safari/Opera */
+.media-bpm-input::-webkit-outer-spin-button,
+.media-bpm-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide spin buttons for Firefox */
+.media-bpm-input[type=number] {
+  -moz-appearance: textfield;
 }
 
 .media-remove {

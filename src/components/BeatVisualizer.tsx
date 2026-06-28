@@ -1012,7 +1012,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
       ctx.restore();
 
       // Draw 2 Vibrating Outer Rings (同步弹簧物理律动的振动氛围外环)
-      if (isPlaying && !isVideoCovered) {
+      if (isPlaying) {
         const vRadius1 = baseBorderRadius * 1.38 * pulseRef.current * hoverScale;
         ctx.strokeStyle = isVideoMode
           ? getVideoControlColor(0.46 * (pulseRef.current - 0.15))
