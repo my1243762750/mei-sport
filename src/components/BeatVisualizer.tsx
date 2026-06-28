@@ -37,6 +37,12 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
   const pulseRef = useRef<number>(1.0);
   const pulseVelocityRef = useRef<number>(0);
 
+  // Metronome arc pendulum refs
+  const lastBeatTimeRef = useRef<number>(performance.now());
+  const lastBeatTriggerRef = useRef<number>(beatTrigger);
+  const beatTriggerRef = useRef<number>(beatTrigger);
+  beatTriggerRef.current = beatTrigger;
+
   const isHoveringCoreRef = useRef<boolean>(false);
   const particlesRef = useRef<{ x: number; y: number; z: number; color: string }[]>([]);
 
@@ -1045,6 +1051,155 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
       ctx.save();
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+
+      // --- Glowing Arc Pendronome (弧形跑道节奏摆锤) ---
+      // Update beat timing tracking (using ref to bypass closure lock)
+      const currentBeatTrigger = beatTriggerRef.current;
+      if (currentBeatTrigger !== lastBeatTriggerRef.current) {
+        lastBeatTimeRef.current = performance.now();
+        lastBeatTriggerRef.current = currentBeatTrigger;
+      }
+
+      // Draw the curved metronome track (Athletics Double Lane Track)
+      ctx.save();
+      const pendRadius = baseBorderRadius * hoverScale + 26;
+      const startAngle = Math.PI * 1.12; // Left side
+      const endAngle = Math.PI * 1.88;   // Right side
+
+      // Inner lane line
+      ctx.strokeStyle = isVideoMode ? 'rgba(52, 211, 153, 0.28)' : getBpmThemeColor(bpm, 0.28);
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, pendRadius - 4, startAngle, endAngle);
+      ctx.stroke();
+
+      // Outer lane line
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, pendRadius + 4, startAngle, endAngle);
+      ctx.stroke();
+
+      // Center running path (dashed glowing track)
+      ctx.strokeStyle = isVideoMode ? 'rgba(52, 211, 153, 0.12)' : getBpmThemeColor(bpm, 0.12);
+      ctx.lineWidth = 6.0;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, pendRadius, startAngle, endAngle);
+      ctx.stroke();
+
+      // Draw end-points ticks for alignment
+      ctx.strokeStyle = isVideoMode ? 'rgba(52, 211, 153, 0.65)' : getBpmThemeColor(bpm, 0.65);
+      ctx.lineWidth = 2.0;
+      [startAngle, endAngle].forEach((ang) => {
+        const sx = centerX + Math.cos(ang) * (pendRadius - 8);
+        const sy = centerY + Math.sin(ang) * (pendRadius - 8);
+        const ex = centerX + Math.cos(ang) * (pendRadius + 8);
+        const ey = centerY + Math.sin(ang) * (pendRadius + 8);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+      });
+
+      // Calculate sliding pendulum phase
+      let t = 0.5; // default center standby
+      let currentPhase = 0.0;
+      let beatDuration = 60 / bpm;
+      let elapsedSeconds = 0.0;
+
+      if (isPlaying) {
+        const now = performance.now();
+        elapsedSeconds = (now - lastBeatTimeRef.current) / 1000;
+        currentPhase = Math.min(1.0, elapsedSeconds / beatDuration);
+        
+        // Easing for inertia: slow down at ends, speed up in center (harmonic oscillator)
+        const easedT = 0.5 - Math.cos(currentPhase * Math.PI) * 0.5;
+        
+        // Alternate directions on alternate beats
+        if (currentBeatTrigger % 2 === 0) {
+          t = easedT; // Left to Right
+        } else {
+          t = 1.0 - easedT; // Right to Left
+        }
+      }
+
+      const activeAngle = startAngle + (endAngle - startAngle) * t;
+
+      // Draw the neon metronome needle (glowing dial pointer)
+      ctx.save();
+      const themeColor = isVideoMode ? '#34d399' : getBpmThemeColor(bpm, 1.0);
+      const coreRadius = baseBorderRadius * hoverScale;
+      const tipRadius = pendRadius + 4;
+
+      // --- Draw Sweeping Motion Trail (Fading Neon Sector Ribbons) ---
+      if (isPlaying) {
+        const trailSteps = 6;
+        for (let i = trailSteps; i > 0; i--) {
+          const trailElapsed = Math.max(0, elapsedSeconds - i * 0.022);
+          const trailPhase = Math.min(1.0, trailElapsed / beatDuration);
+          const trailEasedT = 0.5 - Math.cos(trailPhase * Math.PI) * 0.5;
+          const trailT = (currentBeatTrigger % 2 === 0) ? trailEasedT : (1.0 - trailEasedT);
+          const trailAngle = startAngle + (endAngle - startAngle) * trailT;
+          const trailAlpha = 0.18 * (1 - i / (trailSteps + 1));
+          
+          ctx.strokeStyle = isVideoMode ? `rgba(52, 211, 153, ${trailAlpha})` : getBpmThemeColor(bpm, trailAlpha);
+          ctx.lineWidth = 14.0 * (1 - i / (trailSteps + 1));
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(centerX + Math.cos(trailAngle) * (coreRadius - 5), centerY + Math.sin(trailAngle) * (coreRadius - 5));
+          ctx.lineTo(centerX + Math.cos(trailAngle) * tipRadius, centerY + Math.sin(trailAngle) * tipRadius);
+          ctx.stroke();
+        }
+      }
+
+      const needleStartX = centerX + Math.cos(activeAngle) * (coreRadius - 5);
+      const needleStartY = centerY + Math.sin(activeAngle) * (coreRadius - 5);
+      const needleEndX = centerX + Math.cos(activeAngle) * tipRadius;
+      const needleEndY = centerY + Math.sin(activeAngle) * tipRadius;
+
+      // 1. Draw wide neon outer glow sheath for the needle (thickened to 12.0)
+      ctx.strokeStyle = isVideoMode ? 'rgba(52, 211, 153, 0.45)' : getBpmThemeColor(bpm, 0.45);
+      ctx.lineWidth = 12.0;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(needleStartX, needleStartY);
+      ctx.lineTo(needleEndX, needleEndY);
+      ctx.stroke();
+
+      // 2. Draw sharp white core inside the needle (thickened to 3.5)
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(needleStartX, needleStartY);
+      ctx.lineTo(needleEndX, needleEndY);
+      ctx.stroke();
+
+      // 3. Draw a giant triangular pointer head at the needle tip (with impact flash zoom)
+      const impactScale = isPlaying ? (1.0 + Math.max(0, 1.0 - currentPhase / 0.18) * 0.4) : 1.0;
+      ctx.translate(needleEndX, needleEndY);
+      ctx.rotate(activeAngle);
+      ctx.scale(impactScale, impactScale);
+
+      ctx.fillStyle = themeColor;
+      ctx.beginPath();
+      // Triangle pointing outwards (enlarged)
+      ctx.moveTo(14, 0);       // Tip
+      ctx.lineTo(-4, -12);     // Back left
+      ctx.lineTo(-4, 12);      // Back right
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw sharp white center inside the arrowhead (enlarged)
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(9, 0);
+      ctx.lineTo(-2, -6);
+      ctx.lineTo(-2, 6);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+
+      ctx.restore();
+      // ------------------------------------------------
       ctx.fillStyle = isVideoMode 
         ? (isHoveringCoreRef.current ? '#ecfdf5' : '#34d399') 
         : (isHoveringCoreRef.current ? '#ffffff' : (isPlaying ? getBpmThemeColor(bpm, 1.0) : '#ffffff'));
