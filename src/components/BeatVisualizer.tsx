@@ -165,7 +165,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
 
       const isVideoMode = visualStyle === 'video';
       const hoverScale = isHoveringCoreRef.current ? 1.12 : 1.0;
-      const baseBorderRadius = isVideoMode ? 62 : 47;
+      const baseBorderRadius = isVideoMode ? 105 : 90;
 
       // Draw background
       if (isVideoMode) {
@@ -659,7 +659,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
       pulseRef.current = Math.min(1.4, Math.max(0.7, pulseRef.current));
 
       // Draw Core Glow Orb (UNTOUCHED — spring beat pulsing)
-      const baseOrbRadius = isVideoMode ? 58 : 45;
+      const baseOrbRadius = isVideoMode ? 100 : 85;
       const orbRadius = baseOrbRadius * pulseRef.current * hoverScale;
 
       if (isVideoMode) {
@@ -751,7 +751,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
         ctx.strokeStyle = isVideoMode ? 'rgba(167, 243, 208, 0.35)' : 'rgba(251, 191, 36, 0.35)';
         ctx.lineWidth = 4.5;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, isVideoMode ? 72 : 52, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, baseBorderRadius * hoverScale + 6, 0, Math.PI * 2);
         ctx.stroke();
       }
 
@@ -759,7 +759,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
       ctx.fillStyle = isVideoMode 
         ? (isHoveringCoreRef.current ? '#ecfdf5' : '#34d399') 
         : getBpmDarkTextColor(bpm);
-      ctx.font = `800 ${isVideoMode ? 17 : 15}px Rajdhani, system-ui, sans-serif`;
+      ctx.font = `800 ${isVideoMode ? 28 : 24}px Rajdhani, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       if (!isPlaying && isHoveringCoreRef.current) {
@@ -809,7 +809,11 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
     const centerY = rect.height / 2;
     const dist = Math.sqrt((clickX - centerX) ** 2 + (clickY - centerY) ** 2);
 
-    if (dist <= 86) {
+    const isVideoMode = visualStyle === 'video';
+    const baseBorderRadius = isVideoMode ? 105 : 90;
+    const clickThreshold = baseBorderRadius * 1.3;
+
+    if (dist <= clickThreshold) {
       onTogglePlay();
       pulseVelocityRef.current = 0.14; // tactile spring force feedback!
     }
@@ -828,7 +832,11 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
 
     const dist = Math.sqrt((mouseX - centerX) ** 2 + (mouseY - centerY) ** 2);
 
-    if (dist <= 86) {
+    const isVideoMode = visualStyle === 'video';
+    const baseBorderRadius = isVideoMode ? 105 : 90;
+    const hoverThreshold = baseBorderRadius * 1.3;
+
+    if (dist <= hoverThreshold) {
       canvas.style.cursor = 'pointer';
       isHoveringCoreRef.current = true;
     } else {

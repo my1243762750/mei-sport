@@ -1377,6 +1377,9 @@ body {
 
 .visualizer-stage .foot-pads-row {
   pointer-events: none;
+  width: 100%;
+  justify-content: center;
+  gap: clamp(380px, 45vw, 480px);
 }
 
 .visualizer-stage .foot-pad {
