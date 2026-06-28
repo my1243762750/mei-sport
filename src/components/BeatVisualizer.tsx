@@ -46,6 +46,44 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
   // Fullscreen state and handlers
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Focus mode background theme state
+  const [focusBgTheme, setFocusBgTheme] = useState<'aurora' | 'emerald' | 'abyss' | 'sunrise'>('aurora');
+  const bgImagesRef = useRef<{ [key: string]: HTMLImageElement }>({});
+
+  // Preload Unsplash dynamic wallpaper images
+  useEffect(() => {
+    const urls = {
+      aurora: 'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&w=1600&q=80',
+      emerald: 'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1600&q=80',
+      abyss: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80',
+      sunrise: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80'
+    };
+
+    Object.entries(urls).forEach(([key, url]) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        bgImagesRef.current[key] = img;
+      };
+    });
+  }, []);
+
+  const handleToggleFocusBg = () => {
+    setFocusBgTheme((prev) => {
+      if (prev === 'aurora') return 'emerald';
+      if (prev === 'emerald') return 'abyss';
+      if (prev === 'abyss') return 'sunrise';
+      return 'aurora';
+    });
+  };
+
+  const getFocusBgName = () => {
+    if (focusBgTheme === 'aurora') return '星夜极光';
+    if (focusBgTheme === 'emerald') return '静谧翠林';
+    if (focusBgTheme === 'abyss') return '深海沙滩';
+    return '晨曦山脉';
+  };
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(
@@ -235,8 +273,36 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
 
       if (isVideoCovered) {
         ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = '#040711';
-        ctx.fillRect(0, 0, width, height);
+        
+        // Draw dynamic image wallpaper with Ken Burns panning effect
+        const activeImg = bgImagesRef.current[focusBgTheme];
+        if (activeImg) {
+          // Calculate Ken Burns scale and offsets based on slow waveTime
+          const scale = 1.06 + Math.sin(waveTime * 0.02) * 0.04;
+          const dx = Math.sin(waveTime * 0.015) * 20;
+          const dy = Math.cos(waveTime * 0.01) * 12;
+          
+          const drawW = width * scale;
+          const drawH = height * scale;
+          const drawX = (width - drawW) / 2 + dx;
+          const drawY = (height - drawH) / 2 + dy;
+          
+          ctx.save();
+          // Draw the landscape image covering the screen
+          ctx.drawImage(activeImg, drawX, drawY, drawW, drawH);
+          
+          // Draw a dark dim overlay to ensure the HUD stands out and is eye-friendly
+          ctx.fillStyle = 'rgba(7, 10, 20, 0.52)';
+          ctx.fillRect(0, 0, width, height);
+          ctx.restore();
+        } else {
+          // Fallback solid gradient color if image hasn't loaded yet
+          const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+          skyGrad.addColorStop(0, '#0a0518');
+          skyGrad.addColorStop(1, '#020106');
+          ctx.fillStyle = skyGrad;
+          ctx.fillRect(0, 0, width, height);
+        }
       }
 
       else if (visualStyle === 'video') {
@@ -803,6 +869,64 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
         ctx.stroke();
       }
 
+      // Draw subtle tech-grid background inside the orb (carbon fiber aesthetic)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, orbRadius * 0.95, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.strokeStyle = isVideoMode 
+        ? 'rgba(52, 211, 153, 0.05)' 
+        : 'rgba(255, 255, 255, 0.035)';
+      ctx.lineWidth = 1.0;
+      const stepSize = 18;
+      for (let x = -orbRadius; x <= orbRadius; x += stepSize) {
+        ctx.beginPath();
+        ctx.moveTo(centerX + x, centerY - orbRadius);
+        ctx.lineTo(centerX + x + orbRadius * 2, centerY + orbRadius);
+        ctx.stroke();
+      }
+      for (let x = -orbRadius * 2; x <= orbRadius; x += stepSize) {
+        ctx.beginPath();
+        ctx.moveTo(centerX + x, centerY + orbRadius);
+        ctx.lineTo(centerX + x + orbRadius * 2, centerY - orbRadius);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Draw dual-wave liquid holographic plasma core inside the orb (fully audio reactive!)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, orbRadius * 0.95, 0, Math.PI * 2);
+      ctx.clip();
+      
+      const waveAmp = 22 * (pulseRef.current - 0.9);
+      const waveFreq = 0.024;
+      const waveOffset = waveTime * 4.0;
+      
+      // Wave 1: Green Wave
+      ctx.strokeStyle = isVideoMode ? 'rgba(52, 211, 153, 0.26)' : getBpmThemeColor(bpm, 0.26);
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      for (let x = -orbRadius; x <= orbRadius; x += 5) {
+        const y = Math.sin(x * waveFreq + waveOffset) * waveAmp + (orbRadius * 0.12);
+        if (x === -orbRadius) ctx.moveTo(centerX + x, centerY + y);
+        else ctx.lineTo(centerX + x, centerY + y);
+      }
+      ctx.stroke();
+      
+      // Wave 2: Cyan/White Wave (Phase-offset, floating slightly higher)
+      ctx.strokeStyle = isVideoMode ? 'rgba(6, 182, 212, 0.22)' : 'rgba(255, 255, 255, 0.18)';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (let x = -orbRadius; x <= orbRadius; x += 5) {
+        const y = Math.cos(x * waveFreq - waveOffset * 0.78) * waveAmp * 0.88 - (orbRadius * 0.08);
+        if (x === -orbRadius) ctx.moveTo(centerX + x, centerY + y);
+        else ctx.lineTo(centerX + x, centerY + y);
+      }
+      ctx.stroke();
+      
+      ctx.restore();
+
       // Draw spinning sci-fi turbine blades inside the core
       const turbineAngle = rotationAngle * (isPlaying ? 2.5 : 0.4);
       ctx.save();
@@ -985,7 +1109,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [bpm, isPlaying, combo, visualStyle, isVideoCovered]);
+  }, [bpm, isPlaying, combo, visualStyle, isVideoCovered, focusBgTheme]);
 
   // Click canvas to trigger engine start/stop if clicked in central core
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -1109,6 +1233,17 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
           >
             {isVideoCovered ? '显示画面' : '隐藏画面'}
           </button>
+
+          {isVideoCovered && (
+            <button
+              type="button"
+              className="video-bg-toggle"
+              onClick={handleToggleFocusBg}
+              title="切换背景样式"
+            >
+              🎨 切换背景 ({getFocusBgName()})
+            </button>
+          )}
 
           {visualStyle === 'video' && videoUrl && (
             <button

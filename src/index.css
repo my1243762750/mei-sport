@@ -1600,6 +1600,29 @@ body {
   background: rgba(4, 28, 28, 0.78);
 }
 
+.video-bg-toggle {
+  position: absolute;
+  top: 0.7rem;
+  right: 6.2rem;
+  z-index: 6;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  background: rgba(7, 10, 20, 0.72);
+  color: rgba(255, 255, 255, 0.78);
+  padding: 0.36rem 0.72rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.video-bg-toggle:hover {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
 .video-fullscreen-toggle {
   position: absolute;
   bottom: 0.7rem;
