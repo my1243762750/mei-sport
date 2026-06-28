@@ -1335,10 +1335,10 @@ body {
 }
 
 .foot-pad {
-  flex: 0 0 clamp(5.25rem, 7vw, 6.75rem);
-  width: clamp(5.25rem, 7vw, 6.75rem);
-  max-width: 6.75rem;
-  height: clamp(5.25rem, 7vw, 6.75rem);
+  flex: 0 0 clamp(10.5rem, 14vw, 13.5rem);
+  width: clamp(10.5rem, 14vw, 13.5rem);
+  max-width: 13.5rem;
+  height: clamp(10.5rem, 14vw, 13.5rem);
   border-radius: 50%;
   border: 2px dashed rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.15);
@@ -1379,7 +1379,7 @@ body {
   pointer-events: none;
   width: 100%;
   justify-content: center;
-  gap: clamp(380px, 45vw, 480px);
+  gap: clamp(580px, 48vw, 760px);
 }
 
 .visualizer-stage .foot-pad {
@@ -1399,15 +1399,15 @@ body {
 }
 
 .visualizer-stage .foot-pad svg {
-  width: 2rem;
-  height: 2rem;
+  width: 4rem;
+  height: 4rem;
   margin-bottom: 0 !important;
 }
 
 .visualizer-stage .foot-label {
-  margin-top: 0;
-  font-size: 0.72rem;
-  line-height: 1;
+  margin-top: 0.4rem;
+  font-size: 1.44rem;
+  line-height: 1.2;
 }
 
 .visualizer-stage .tap-live-feedback {

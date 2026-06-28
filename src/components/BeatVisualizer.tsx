@@ -38,6 +38,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
   const pulseVelocityRef = useRef<number>(0);
 
   const isHoveringCoreRef = useRef<boolean>(false);
+  const particlesRef = useRef<{ x: number; y: number; z: number; color: string }[]>([]);
 
   // Dynamic aspect ratio tracking for uploaded video
   const [videoRatio, setVideoRatio] = useState<number>(1.77); // Default to 16:9
@@ -132,11 +133,6 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
 
   // Sync video speed with BPM
   useEffect(() => {
-    if (videoRef.current && isVideoCovered) {
-      videoRef.current.pause();
-      return;
-    }
-
     if (videoRef.current && isPlaying) {
       const speed = bpm / 180;
       videoRef.current.playbackRate = Math.max(0.5, Math.min(2.0, speed));
@@ -147,7 +143,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
     } else if (videoRef.current && !isPlaying) {
       videoRef.current.pause();
     }
-  }, [bpm, isPlaying, videoUrl, visualStyle, isVideoCovered]);
+  }, [bpm, isPlaying, videoUrl, visualStyle]);
 
   // Sync video volume and muted state
   useEffect(() => {
@@ -222,7 +218,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
 
       const isVideoMode = visualStyle === 'video';
       const hoverScale = isHoveringCoreRef.current ? 1.12 : 1.0;
-      const baseBorderRadius = isVideoMode ? 105 : 90;
+      const baseBorderRadius = isVideoMode ? 210 : 180;
 
       // Draw background
       if (isVideoMode) {
@@ -705,6 +701,66 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
         }
       }
 
+      // Initialize speed particles once
+      if (particlesRef.current.length === 0) {
+        for (let i = 0; i < 45; i++) {
+          particlesRef.current.push({
+            x: (Math.random() - 0.5) * 800,
+            y: (Math.random() - 0.5) * 800,
+            z: Math.random() * 800 + 100,
+            color: Math.random() > 0.5 ? '#34d399' : '#06b6d4',
+          });
+        }
+      }
+
+      // Draw speed particles
+      const speedFactor = (isPlaying ? (bpm / 180) * 15 : 0.8);
+      ctx.lineWidth = 1.5;
+      
+      particlesRef.current.forEach((p) => {
+        // Project 3D coordinate to 2D
+        const px = (p.x / p.z) * width + centerX;
+        const py = (p.y / p.z) * height + centerY;
+        
+        // Move closer
+        p.z -= speedFactor;
+        
+        // Reset if reached viewer
+        if (p.z <= 10) {
+          p.z = 800 + Math.random() * 100;
+          p.x = (Math.random() - 0.5) * 600;
+          p.y = (Math.random() - 0.5) * 600;
+        }
+        
+        // Project new 2D position
+        const nx = (p.x / p.z) * width + centerX;
+        const ny = (p.y / p.z) * height + centerY;
+        
+        // Draw speed line
+        const alpha = Math.max(0, Math.min(0.7, (800 - p.z) / 600));
+        ctx.strokeStyle = p.color === '#34d399' 
+          ? `rgba(52, 211, 153, ${alpha * 0.45})` 
+          : `rgba(6, 182, 212, ${alpha * 0.45})`;
+          
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(nx, ny);
+        ctx.stroke();
+      });
+
+      // Subtle beat expansion ripple
+      const rippleRadius = baseBorderRadius * hoverScale * (1.0 + (pulseRef.current - 1.0) * 2.5);
+      const rippleAlpha = Math.max(0, 0.4 - (pulseRef.current - 1.0) * 1.8);
+      if (rippleAlpha > 0.01) {
+        ctx.strokeStyle = isVideoMode 
+          ? `rgba(52, 211, 153, ${rippleAlpha})` 
+          : getBpmThemeColor(bpm, rippleAlpha);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       // Update spring physics for core pulse
       const k = 0.055;
       const d = 0.13;
@@ -716,63 +772,46 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
       pulseRef.current = Math.min(1.4, Math.max(0.7, pulseRef.current));
 
       // Draw Core Glow Orb (UNTOUCHED — spring beat pulsing)
-      const baseOrbRadius = isVideoMode ? 100 : 85;
+      const baseOrbRadius = isVideoMode ? 200 : 170;
       const orbRadius = baseOrbRadius * pulseRef.current * hoverScale;
 
       if (isVideoMode) {
-        ctx.fillStyle = `rgba(4, 20, 18, ${0.58 * pulseRef.current})`;
+        // Draw solid dark background core
+        ctx.fillStyle = 'rgba(7, 10, 20, 0.88)';
         ctx.beginPath();
         ctx.arc(centerX, centerY, orbRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // 2-pass glow border for GPU rendering (No shadowBlur!)
-        ctx.strokeStyle = isHoveringCoreRef.current ? 'rgba(167, 243, 208, 0.34)' : getVideoControlColor(0.22 * pulseRef.current);
-        ctx.lineWidth = isHoveringCoreRef.current ? 8.0 : 6.0;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, orbRadius - 2, 0, Math.PI * 2);
-        ctx.stroke();
-
+        // Sharp clean border with no shadow / glow
         ctx.strokeStyle = isHoveringCoreRef.current ? '#a7f3d0' : getVideoControlColor(0.86 * pulseRef.current);
-        ctx.lineWidth = isHoveringCoreRef.current ? 2.5 : 1.5;
+        ctx.lineWidth = isHoveringCoreRef.current ? 3.0 : 2.0;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, orbRadius - 2, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, orbRadius, 0, Math.PI * 2);
         ctx.stroke();
       } else {
         const themeColorBase = getBpmThemeColor(bpm, 1.0);
-        const glowGrad = ctx.createRadialGradient(
-          centerX, centerY, orbRadius * 0.15,
-          centerX, centerY, orbRadius
-        );
-        glowGrad.addColorStop(0, isHoveringCoreRef.current ? '#ffffff' : '#f5f3ff');
-        glowGrad.addColorStop(0.35, themeColorBase);
-        glowGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = glowGrad;
+        ctx.fillStyle = getBpmDarkTextColor(bpm);
         ctx.beginPath();
         ctx.arc(centerX, centerY, orbRadius, 0, Math.PI * 2);
         ctx.fill();
+
+        // Sharp clean border with no shadow / glow
+        ctx.strokeStyle = isHoveringCoreRef.current ? '#ffffff' : themeColorBase;
+        ctx.lineWidth = isHoveringCoreRef.current ? 3.0 : 2.0;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, orbRadius, 0, Math.PI * 2);
+        ctx.stroke();
       }
 
-      // Outer clickable border dash ring (2-pass high visibility neon glow!)
+      // Outer clickable border dashed ring (Single-pass sharp dashed border, no shadow / glow)
       const ringColor = isVideoMode
         ? (isHoveringCoreRef.current ? '#a7f3d0' : getVideoControlColor(0.95))
         : (isHoveringCoreRef.current ? '#fbbf24' : getBpmThemeColor(bpm, 0.95));
-      const dashPattern = isPlaying && !isVideoCovered ? [10, 6] : []; // Longer dashes for more visual presence
+      const dashPattern = isPlaying && !isVideoCovered ? [10, 6] : [];
       const dashOffset = isPlaying && !isVideoCovered ? -rotationAngle * 12 : 0;
-      
-      // Pass 1: Wide background neon glow ring
-      ctx.strokeStyle = isVideoMode
-        ? (isHoveringCoreRef.current ? 'rgba(167, 243, 208, 0.34)' : getVideoControlColor(0.36))
-        : (isHoveringCoreRef.current ? 'rgba(251, 191, 36, 0.3)' : getBpmThemeColor(bpm, 0.35));
-      ctx.lineWidth = isHoveringCoreRef.current ? 8.0 : 6.0;
-      ctx.setLineDash(dashPattern);
-      ctx.lineDashOffset = dashOffset;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, baseBorderRadius * hoverScale, 0, Math.PI * 2);
-      ctx.stroke();
 
-      // Pass 2: Sharp bright inner dashed ring
       ctx.strokeStyle = ringColor;
-      ctx.lineWidth = isHoveringCoreRef.current ? 3.5 : 2.5;
+      ctx.lineWidth = isHoveringCoreRef.current ? 4.0 : 2.5;
       ctx.setLineDash(dashPattern);
       ctx.lineDashOffset = dashOffset;
       ctx.beginPath();
@@ -803,12 +842,12 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
         ctx.stroke();
       }
 
-      // Glowing outer ring for hover state
+      // Sharp outer ring for hover state (no shadow / glow)
       if (isHoveringCoreRef.current) {
-        ctx.strokeStyle = isVideoMode ? 'rgba(167, 243, 208, 0.35)' : 'rgba(251, 191, 36, 0.35)';
-        ctx.lineWidth = 4.5;
+        ctx.strokeStyle = isVideoMode ? 'rgba(52, 211, 153, 0.6)' : getBpmThemeColor(bpm, 0.6);
+        ctx.lineWidth = 2.0;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, baseBorderRadius * hoverScale + 6, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, baseBorderRadius * hoverScale + 8, 0, Math.PI * 2);
         ctx.stroke();
       }
 
@@ -816,7 +855,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
       ctx.fillStyle = isVideoMode 
         ? (isHoveringCoreRef.current ? '#ecfdf5' : '#34d399') 
         : getBpmDarkTextColor(bpm);
-      ctx.font = `800 ${isVideoMode ? 28 : 24}px Rajdhani, system-ui, sans-serif`;
+      ctx.font = `800 ${isVideoMode ? 44 : 38}px Rajdhani, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       if (!isPlaying && isHoveringCoreRef.current) {
@@ -867,7 +906,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
     const dist = Math.sqrt((clickX - centerX) ** 2 + (clickY - centerY) ** 2);
 
     const isVideoMode = visualStyle === 'video';
-    const baseBorderRadius = isVideoMode ? 105 : 90;
+    const baseBorderRadius = isVideoMode ? 210 : 180;
     const clickThreshold = baseBorderRadius * 1.3;
 
     if (dist <= clickThreshold) {
@@ -890,7 +929,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
     const dist = Math.sqrt((mouseX - centerX) ** 2 + (mouseY - centerY) ** 2);
 
     const isVideoMode = visualStyle === 'video';
-    const baseBorderRadius = isVideoMode ? 105 : 90;
+    const baseBorderRadius = isVideoMode ? 210 : 180;
     const hoverThreshold = baseBorderRadius * 1.3;
 
     if (dist <= hoverThreshold) {
