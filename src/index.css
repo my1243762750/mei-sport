@@ -1600,6 +1600,69 @@ body {
   background: rgba(4, 28, 28, 0.78);
 }
 
+.video-fullscreen-toggle {
+  position: absolute;
+  bottom: 0.7rem;
+  right: 0.7rem;
+  z-index: 6;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  background: rgba(7, 10, 20, 0.72);
+  color: rgba(255, 255, 255, 0.78);
+  padding: 0.36rem 0.72rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.video-fullscreen-toggle:hover {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.video-fullscreen-toggle.active {
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.42);
+  background: rgba(4, 28, 28, 0.78);
+}
+
+/* Fullscreen styles for visualizer stage and container */
+.visualizer-stage:fullscreen {
+  background: #000000 !important;
+}
+
+.visualizer-stage:fullscreen .visualizer-container {
+  height: 100% !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+}
+
+.visualizer-stage:-webkit-full-screen {
+  background: #000000 !important;
+}
+
+.visualizer-stage:-webkit-full-screen .visualizer-container {
+  height: 100% !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+}
+
+.visualizer-stage:-ms-fullscreen {
+  background: #000000 !important;
+}
+
+.visualizer-stage:-ms-fullscreen .visualizer-container {
+  height: 100% !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+}
+
 .video-focus-cover {
   position: absolute;
   inset: 0;

@@ -42,6 +42,63 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
   // Dynamic aspect ratio tracking for uploaded video
   const [videoRatio, setVideoRatio] = useState<number>(1.77); // Default to 16:9
 
+  // Fullscreen state and handlers
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(
+        !!(document.fullscreenElement ||
+           (document as any).webkitFullscreenElement ||
+           (document as any).mozFullScreenElement ||
+           (document as any).msFullscreenElement)
+      );
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
+
+  const handleToggleFullscreen = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const element = canvas.closest('.visualizer-stage') || canvas.closest('.visualizer-container');
+    if (!element) return;
+
+    if (!document.fullscreenElement && 
+        !(document as any).webkitFullscreenElement && 
+        !(document as any).mozFullScreenElement && 
+        !(document as any).msFullscreenElement) {
+      if (element.requestFullscreen) {
+        element.requestFullscreen();
+      } else if ((element as any).webkitRequestFullscreen) {
+        (element as any).webkitRequestFullscreen();
+      } else if ((element as any).mozRequestFullScreen) {
+        (element as any).mozRequestFullScreen();
+      } else if ((element as any).msRequestFullscreen) {
+        (element as any).msRequestFullscreen();
+      }
+    } else {
+      const exitFs = document.exitFullscreen || 
+                     (document as any).webkitExitFullscreen || 
+                     (document as any).mozCancelFullScreen || 
+                     (document as any).msExitFullscreen;
+      if (exitFs) {
+        exitFs.call(document);
+      }
+    }
+  };
+
   // Track color theme based on BPM
   const getBpmThemeColor = (currentBpm: number, alpha: number = 1) => {
     if (currentBpm < 165) {
@@ -918,6 +975,18 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
           >
             {isVideoCovered ? '显示画面' : '隐藏画面'}
           </button>
+
+          {visualStyle === 'video' && videoUrl && (
+            <button
+              type="button"
+              className={`video-fullscreen-toggle ${isFullscreen ? 'active' : ''}`}
+              onClick={handleToggleFullscreen}
+              aria-pressed={isFullscreen}
+              title={isFullscreen ? '退出全屏' : '全屏播放'}
+            >
+              {isFullscreen ? '退出全屏' : '全屏播放'}
+            </button>
+          )}
 
           <div className={`video-focus-cover ${isVideoCovered ? 'visible' : ''}`} aria-hidden={!isVideoCovered}>
             <div className="video-focus-aurora" />
