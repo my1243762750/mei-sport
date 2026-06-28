@@ -803,25 +803,92 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
         ctx.stroke();
       }
 
-      // Outer clickable border dashed ring (Single-pass sharp dashed border, no shadow / glow)
-      const ringColor = isVideoMode
-        ? (isHoveringCoreRef.current ? '#a7f3d0' : getVideoControlColor(0.95))
-        : (isHoveringCoreRef.current ? '#fbbf24' : getBpmThemeColor(bpm, 0.95));
-      const dashPattern = isPlaying && !isVideoCovered ? [10, 6] : [];
-      const dashOffset = isPlaying && !isVideoCovered ? -rotationAngle * 12 : 0;
+      // Draw spinning sci-fi turbine blades inside the core
+      const turbineAngle = rotationAngle * (isPlaying ? 2.5 : 0.4);
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(turbineAngle);
+      const bladeColor = isVideoMode 
+        ? 'rgba(52, 211, 153, 0.09)' 
+        : getBpmThemeColor(bpm, 0.09);
+      ctx.fillStyle = bladeColor;
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, orbRadius * 0.9, 0, Math.PI * 0.28);
+        ctx.closePath();
+        ctx.fill();
+        ctx.rotate((Math.PI * 2) / 3);
+      }
+      ctx.restore();
 
-      ctx.strokeStyle = ringColor;
-      ctx.lineWidth = isHoveringCoreRef.current ? 4.0 : 2.5;
-      ctx.setLineDash(dashPattern);
-      ctx.lineDashOffset = dashOffset;
+      // Circular Audio Spectrum Visualizer around the core border
+      const barsCount = 60;
+      const spectrumThemeColor = isVideoMode 
+        ? getVideoControlColor(0.85) 
+        : getBpmThemeColor(bpm, 0.85);
+      ctx.save();
+      ctx.lineWidth = 2.0;
+      ctx.lineCap = 'round';
+      for (let i = 0; i < barsCount; i++) {
+        const angle = (i / barsCount) * Math.PI * 2 + rotationAngle * 0.15;
+        const noise = Math.sin(i * 0.5 + waveTime * 4.5) * Math.cos(i * 0.3 - waveTime * 2.2);
+        const beatImpact = (pulseRef.current - 1.0) * 120;
+        const baseHeight = isPlaying ? 8 + Math.abs(noise) * 16 : 4 + Math.abs(noise) * 5;
+        const barHeight = Math.max(2, baseHeight + beatImpact);
+        const startRad = orbRadius + 3;
+        const endRad = startRad + barHeight;
+        const sx = centerX + Math.cos(angle) * startRad;
+        const sy = centerY + Math.sin(angle) * startRad;
+        const ex = centerX + Math.cos(angle) * endRad;
+        const ey = centerY + Math.sin(angle) * endRad;
+        ctx.strokeStyle = spectrumThemeColor;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Concentric Tech Segmented Rings
+      ctx.save();
+      const outerRad = baseBorderRadius * hoverScale + 10;
+      ctx.strokeStyle = isVideoMode ? 'rgba(52, 211, 153, 0.45)' : getBpmThemeColor(bpm, 0.45);
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([35, 12, 10, 12]);
+      ctx.lineDashOffset = -rotationAngle * 35;
       ctx.beginPath();
-      ctx.arc(centerX, centerY, baseBorderRadius * hoverScale, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, outerRad, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.setLineDash([]); // reset
+
+      const innerRad = baseBorderRadius * hoverScale - 8;
+      ctx.strokeStyle = isVideoMode ? 'rgba(6, 182, 212, 0.55)' : getBpmThemeColor(bpm, 0.55);
+      ctx.lineWidth = 1.0;
+      ctx.setLineDash([60, 25, 5, 25]);
+      ctx.lineDashOffset = rotationAngle * 45;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, innerRad, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+      ctx.strokeStyle = isVideoMode ? 'rgba(52, 211, 153, 0.65)' : getBpmThemeColor(bpm, 0.65);
+      ctx.lineWidth = 2.0;
+      const tickLength = 8;
+      const crosshairAngles = [0, Math.PI * 0.5, Math.PI, Math.PI * 1.5];
+      crosshairAngles.forEach((a) => {
+        const sx = centerX + Math.cos(a) * (outerRad - 4);
+        const sy = centerY + Math.sin(a) * (outerRad - 4);
+        const ex = centerX + Math.cos(a) * (outerRad + tickLength);
+        const ey = centerY + Math.sin(a) * (outerRad + tickLength);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+      });
+      ctx.restore();
 
       // Draw 2 Vibrating Outer Rings (同步弹簧物理律动的振动氛围外环)
       if (isPlaying && !isVideoCovered) {
-        // Ring 1 (Inner vibrating ring)
         const vRadius1 = baseBorderRadius * 1.38 * pulseRef.current * hoverScale;
         ctx.strokeStyle = isVideoMode
           ? getVideoControlColor(0.46 * (pulseRef.current - 0.15))
@@ -831,7 +898,6 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
         ctx.arc(centerX, centerY, vRadius1, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Ring 2 (Outer vibrating ring)
         const vRadius2 = baseBorderRadius * 1.68 * pulseRef.current * hoverScale;
         ctx.strokeStyle = isVideoMode
           ? getVideoControlColor(0.24 * (pulseRef.current - 0.25))
@@ -851,20 +917,49 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
         ctx.stroke();
       }
 
-      // Draw central command text
+      // Draw central command text and sub-labels
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillStyle = isVideoMode 
         ? (isHoveringCoreRef.current ? '#ecfdf5' : '#34d399') 
         : getBpmDarkTextColor(bpm);
       ctx.font = `800 ${isVideoMode ? 44 : 38}px Rajdhani, system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+
+      let mainText = '';
+      let subText = '';
+      let subColor = '';
+
       if (!isPlaying && isHoveringCoreRef.current) {
-        ctx.fillText('▶ START', centerX, centerY);
+        mainText = '▶ START';
+        subText = 'INITIALIZE TRAIN';
+        subColor = isVideoMode ? '#6ee7b7' : '#fbbf24';
       } else if (isPlaying && isHoveringCoreRef.current) {
-        ctx.fillText('⏹ STOP', centerX, centerY);
+        mainText = '⏹ STOP';
+        subText = 'HALT ENGINE';
+        subColor = '#f43f5e';
       } else {
-        ctx.fillText(isPlaying ? 'RUNNING' : 'READY', centerX, centerY);
+        mainText = isPlaying ? 'RUNNING' : 'READY';
+        subText = isPlaying ? 'METRIC SYNCED' : 'SYSTEM IDLE';
+        subColor = isPlaying 
+          ? (isVideoMode ? '#34d399' : getBpmThemeColor(bpm, 0.9))
+          : 'rgba(255, 255, 255, 0.4)';
       }
+
+      ctx.fillText(mainText, centerX, centerY - 6);
+
+      ctx.fillStyle = subColor;
+      ctx.font = `800 11px monospace`;
+      ctx.fillText(subText, centerX, centerY + 24);
+
+      ctx.strokeStyle = subColor;
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 35, centerY + 12);
+      ctx.lineTo(centerX + 35, centerY + 12);
+      ctx.stroke();
+
+      ctx.restore();
 
       // Lightning sparks
       if (combo >= 15 && isPlaying && Math.random() < 0.4) {
