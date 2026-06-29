@@ -50,3 +50,5 @@ npm run preview
 ## 技术栈
 
 React 19、TypeScript、Vite、Web Audio API。
+
+UI 组件基于 [mei-ui-system](https://github.com/my1243762750/mei-ui-system) 构建。
