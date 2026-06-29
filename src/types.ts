@@ -10,10 +10,7 @@ export interface RunningStats {
   elapsedTime: number; // in seconds
   steps: number;
   calories: number;
-  combo: number;
-  maxCombo: number;
   level: number;
-  streakMultiplier: number;
 }
 
 export interface BeatSoundOption {

@@ -5,7 +5,6 @@ interface BeatVisualizerProps {
   bpm: number;
   isPlaying: boolean;
   beatTrigger: number;
-  combo: number;
   visualStyle: VisualStyle;
   videoUrl: string | null;
   onVideoEnded: () => void;
@@ -20,7 +19,6 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
   bpm,
   isPlaying,
   beatTrigger,
-  combo,
   visualStyle,
   videoUrl,
   onVideoEnded,
@@ -1240,22 +1238,6 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
 
       ctx.restore();
 
-      // Lightning sparks
-      if (combo >= 15 && isPlaying && Math.random() < 0.4) {
-        ctx.strokeStyle = `hsla(${Math.random() * 360}, 100%, 75%, 0.8)`;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        let currX = centerX + (Math.random() - 0.5) * 80;
-        let currY = centerY + (Math.random() - 0.5) * 80;
-        ctx.moveTo(currX, currY);
-        for (let i = 0; i < 4; i++) {
-          currX += (Math.random() - 0.5) * 20;
-          currY += (Math.random() - 0.5) * 20;
-          ctx.lineTo(currX, currY);
-        }
-        ctx.stroke();
-      }
-
       animationFrameId = requestAnimationFrame(render);
     };
 
@@ -1264,7 +1246,7 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [bpm, isPlaying, combo, visualStyle, isVideoCovered, focusBgTheme]);
+  }, [bpm, isPlaying, visualStyle, isVideoCovered, focusBgTheme]);
 
   // Click canvas to trigger engine start/stop if clicked in central core
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -1439,12 +1421,6 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
         }}
       />
 
-      {combo > 0 && (
-        <div className="visualizer-hud-combo" style={{ zIndex: 5 }}>
-          <span className="combo-hud-label">Combo</span>
-          <span className="combo-hud-value">{combo}x</span>
-        </div>
-      )}
     </div>
   );
 };

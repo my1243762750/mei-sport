@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { BeatSoundType, MusicStyle, RunningStats, Track, VideoTrack, VisualStyle } from './types';
 import { AudioEngine } from './audio/AudioEngine';
 import { BeatVisualizer } from './components/BeatVisualizer';
-import { ComboGame } from './components/ComboGame';
 import { ControlPanel } from './components/ControlPanel';
+import { LeftRightFootGuide } from './components/LeftRightFootGuide';
 import { RunStatsOverlay } from './components/RunStatsOverlay';
 
 const DEFAULT_TRACKS: Track[] = [];
@@ -16,8 +16,6 @@ export default function App() {
   const [musicVolume, setMusicVolume] = useState(0.35);
   const [isPlaying, setIsPlaying] = useState(false);
   const [beatTrigger, setBeatTrigger] = useState(0);
-  const [combo, setCombo] = useState(0);
-  const [maxCombo, setMaxCombo] = useState(0);
   const [customPlaylist, setCustomPlaylist] = useState<Track[]>(DEFAULT_TRACKS);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [videoPlaylist, setVideoPlaylist] = useState<VideoTrack[]>([]);
@@ -33,10 +31,7 @@ export default function App() {
     elapsedTime: 0,
     steps: 0,
     calories: 0,
-    combo: 0,
-    maxCombo: 0,
     level: 0,
-    streakMultiplier: 1,
   });
 
   const audioEngineRef = useRef<AudioEngine | null>(null);
@@ -101,10 +96,6 @@ export default function App() {
   useEffect(() => {
     audioEngineRef.current?.setMusicVolume(musicVolume);
   }, [musicVolume]);
-
-  useEffect(() => {
-    setStats((prev) => ({ ...prev, combo, maxCombo }));
-  }, [combo, maxCombo]);
 
   useEffect(() => {
     if (musicStyle === 'custom') playCurrentCustomTrack();
@@ -201,7 +192,6 @@ export default function App() {
     if (isPlaying) {
       audioEngineRef.current.stop();
       setIsPlaying(false);
-      setCombo(0);
       setStats((prev) => ({ ...prev, isPlaying: false }));
       return;
     }
@@ -222,13 +212,8 @@ export default function App() {
       elapsedTime: 0,
       steps: 0,
       calories: 0,
-      combo: 0,
-      maxCombo: 0,
       level: 0,
-      streakMultiplier: 1,
     });
-    setCombo(0);
-    setMaxCombo(0);
   };
 
   return (
@@ -260,7 +245,6 @@ export default function App() {
               bpm={bpm}
               isPlaying={isPlaying}
               beatTrigger={beatTrigger}
-              combo={combo}
               visualStyle={visualStyle}
               videoUrl={videoPlaylist.length > 0 ? videoPlaylist[currentVideoIndex].url : null}
               onVideoEnded={handleVideoEnded}
@@ -270,13 +254,7 @@ export default function App() {
               isVideoCovered={isVideoCovered}
               setIsVideoCovered={setIsVideoCovered}
             />
-            <ComboGame
-              bpm={bpm}
-              isPlaying={isPlaying}
-              beatTrigger={beatTrigger}
-              setCombo={setCombo}
-              setMaxCombo={setMaxCombo}
-            />
+            <LeftRightFootGuide isPlaying={isPlaying} beatTrigger={beatTrigger} />
             <RunStatsOverlay stats={stats} resetStats={handleResetStats} />
           </div>
         </section>
