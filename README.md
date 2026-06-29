@@ -2,6 +2,8 @@
 
 跑步节奏训练 Web App：用可视化节拍、音乐同步和实时运动数据，帮你把步频练得更稳。
 
+在线体验：[https://mei-sport.vercel.app/](https://mei-sport.vercel.app/)
+
 ![RunBeat 主界面](docs/screenshots/main.png)
 
 ## 亮点
