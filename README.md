@@ -36,9 +36,12 @@ npm run dev
 
 ```bash
 npm run build
+npm run build:extension
 npm run lint
 npm run preview
 ```
+
+`npm run build:extension` 会生成 `dist-extension/`，在 Chrome / Edge 开发者模式中选择“加载已解压的扩展程序”即可运行。
 
 ## 技术栈
 
