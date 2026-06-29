@@ -89,14 +89,12 @@ function render(size) {
   const buf = Buffer.alloc(hi * hi * 4);
   const white = [...rgb('#F8F9FC'), 255];
   const soft = [...rgb('#DDD6FE'), 255];
-  const shell = [...rgb('#1A1A2E'), 255];
   const c = hi / 2;
 
-  drawCircle(buf, hi, c, c, hi * 0.49, shell);
   for (let y = 0; y < hi; y++) {
     for (let x = 0; x < hi; x++) {
       const d = Math.hypot(x + 0.5 - c, y + 0.5 - c);
-      if (d <= hi * 0.41) {
+      if (d <= hi * 0.44 + 1) {
         blend(buf, hi, x, y, gradient((x + y) / (hi * 2)), 1);
       }
     }
