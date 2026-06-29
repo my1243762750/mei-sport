@@ -14,7 +14,7 @@ const FootprintsIcon: React.FC<{ active: boolean; mirrored?: boolean }> = ({ act
     viewBox="0 0 36 36"
     className="foot-guide-icon"
     style={{
-      color: active ? '#10b981' : 'rgba(255, 255, 255, 0.08)',
+      color: active ? 'var(--mei-primary-300)' : 'rgba(255, 255, 255, 0.08)',
       transform: mirrored ? 'scaleX(-1)' : undefined,
     }}
   >

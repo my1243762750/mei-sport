@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="RunBeat logo">
+  <defs>
+    <linearGradient id="runbeat-bg" x1="28" y1="20" x2="104" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="0.48" stop-color="#6C5CE7"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="runbeat-line" x1="36" y1="76" x2="94" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EFF6FF"/>
+      <stop offset="1" stop-color="#DDD6FE"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="62" fill="#1A1A2E"/>
+  <circle cx="64" cy="64" r="52" fill="url(#runbeat-bg)"/>
+  <path d="M36 76c13-22 31-34 53-38" fill="none" stroke="#F8F9FC" stroke-width="9" stroke-linecap="round"/>
+  <path d="M46 84h39" fill="none" stroke="url(#runbeat-line)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M75 45l18-14 3 23" fill="none" stroke="#F8F9FC" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="36" cy="76" r="7" fill="#F8F9FC"/>
+  <circle cx="88" cy="84" r="7" fill="#DDD6FE"/>
+</svg>

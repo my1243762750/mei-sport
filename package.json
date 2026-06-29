@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:extension": "tsc -b && vite build --base=./ --outDir dist-extension && node scripts/prepare-extension.mjs",
+    "build:extension": "node scripts/generate-runbeat-icons.mjs && tsc -b && vite build --base=./ --outDir dist-extension && node scripts/prepare-extension.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },

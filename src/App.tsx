@@ -220,7 +220,7 @@ export default function App() {
     <div className="app-container">
       <header className="header-section">
         <div className="brand-lockup">
-          <span className="brand-mark">RUN</span>
+          <img className="brand-mark" src="/runbeat-logo.svg" alt="RunBeat" />
           <div className="brand-copy">
             <h1 className="title-text">RunBeat</h1>
             <p className="subtitle-text">跑步节奏训练</p>
