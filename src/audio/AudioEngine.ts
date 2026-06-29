@@ -26,6 +26,9 @@ export class AudioEngine {
   private metronomeGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
 
+  // Audio sample buffers for real sound playback
+  private samples: Map<string, AudioBuffer> = new Map();
+
   private readonly lookahead: number = 0.1;
   private readonly scheduleInterval: number = 25.0;
 
@@ -72,6 +75,48 @@ export class AudioEngine {
     this.musicGain = this.ctx.createGain();
     this.musicGain.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
     this.musicGain.connect(this.masterGain);
+
+    this.loadSamples();
+  }
+
+  private async loadSamples() {
+    if (!this.ctx) return;
+    const sampleFiles: [string, string][] = [
+      ['blop1', '/sounds/water-blop-1.mp3'],
+      ['blop2', '/sounds/water-blop-2.mp3'],
+      ['blop3', '/sounds/water-blop-3.mp3'],
+      ['snare', '/sounds/snare.mp3'],
+      ['hihat', '/sounds/hihat.mp3'],
+      ['woodblock', '/sounds/block.mp3'],
+      ['drum', '/sounds/bass_tom.mp3'],
+      ['tom_high', '/sounds/high_tom.mp3'],
+      ['mellow', '/sounds/medium_tom.mp3'],
+      ['maracas', '/sounds/maraca.mp3'],
+    ];
+    await Promise.all(sampleFiles.map(async ([name, url]) => {
+      try {
+        const res = await fetch(url);
+        const buf = await res.arrayBuffer();
+        const audioBuf = await this.ctx!.decodeAudioData(buf);
+        this.samples.set(name, audioBuf);
+      } catch {
+        console.warn(`Failed to load sample: ${name}`);
+      }
+    }));
+  }
+
+  private playSample(soundType: string, time: number, volume: number): boolean {
+    const buffer = this.samples.get(soundType);
+    if (!buffer || !this.ctx || !this.metronomeGain) return false;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    const sg = this.ctx.createGain();
+    sg.gain.setValueAtTime(volume * 1.5, time);
+    src.connect(sg);
+    sg.connect(this.metronomeGain);
+    src.start(time);
+    src.stop(time + buffer.duration);
+    return true;
   }
 
   // Plays a custom track URL using dynamic HTML5 Audio element routed to AudioContext
@@ -276,28 +321,7 @@ export class AudioEngine {
         break;
 
       case 'drum':
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(200 * pitchMultiplier, time);
-        osc.frequency.exponentialRampToValueAtTime(60, time + 0.1);
-        gainNode.gain.setValueAtTime(volume * 1.5, time);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
-
-        const noise = this.createNoiseBufferNode();
-        if (noise) {
-          const noiseGain = this.ctx.createGain();
-          const filter = this.ctx.createBiquadFilter();
-          filter.type = 'bandpass';
-          filter.frequency.setValueAtTime(1200, time);
-          noise.connect(filter);
-          filter.connect(noiseGain);
-          noiseGain.connect(this.metronomeGain);
-          noiseGain.gain.setValueAtTime(volume * 0.5, time);
-          noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
-          noise.start(time);
-          noise.stop(time + 0.11);
-        }
-        osc.start(time);
-        osc.stop(time + 0.13);
+        this.playSample('drum', time, volume);
         break;
 
       case 'bass':
@@ -311,24 +335,7 @@ export class AudioEngine {
         break;
 
       case 'woodblock':
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(1200 * pitchMultiplier, time);
-        gainNode.gain.setValueAtTime(volume * 1.5, time);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
-
-        const osc2 = this.ctx.createOscillator();
-        const gain2 = this.ctx.createGain();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(1600 * pitchMultiplier, time);
-        gain2.gain.setValueAtTime(volume * 1.0, time);
-        gain2.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
-        osc2.connect(gain2);
-        gain2.connect(this.metronomeGain);
-
-        osc.start(time);
-        osc.stop(time + 0.09);
-        osc2.start(time);
-        osc2.stop(time + 0.07);
+        this.playSample('woodblock', time, volume);
         break;
 
       case 'cowbell':
@@ -392,44 +399,128 @@ export class AudioEngine {
         osc.stop(time + 0.35);
         break;
 
-      case 'double_bass':
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(140 * pitchMultiplier, time);
-        osc.frequency.exponentialRampToValueAtTime(45, time + 0.08);
-        gainNode.gain.setValueAtTime(volume * 1.4, time);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
-        osc.start(time);
-        osc.stop(time + 0.12);
-
-        const time2 = time + 0.08;
-        const oscDb2 = this.ctx.createOscillator();
-        const gainDb2 = this.ctx.createGain();
-        oscDb2.type = 'sine';
-        oscDb2.frequency.setValueAtTime(120 * pitchMultiplier, time2);
-        oscDb2.frequency.exponentialRampToValueAtTime(40, time2 + 0.08);
-        gainDb2.gain.setValueAtTime(volume * 1.2, time2);
-        gainDb2.gain.exponentialRampToValueAtTime(0.001, time2 + 0.1);
-        oscDb2.connect(gainDb2);
-        gainDb2.connect(this.metronomeGain);
-        oscDb2.start(time2);
-        oscDb2.stop(time2 + 0.12);
+      case 'hihat':
+        this.playSample('hihat', time, volume);
         break;
 
-      case 'hihat':
-        const hhSource = this.createNoiseBufferNode();
-        if (hhSource) {
-          const hhGain = this.ctx.createGain();
-          const filter = this.ctx.createBiquadFilter();
-          filter.type = 'highpass';
-          filter.frequency.setValueAtTime(8000, time);
-          hhSource.connect(filter);
-          filter.connect(hhGain);
-          hhGain.connect(this.metronomeGain);
-          hhGain.gain.setValueAtTime(volume * 0.9, time);
-          hhGain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
-          hhSource.start(time);
-          hhSource.stop(time + 0.06);
+      case 'blop1':
+      case 'blop2':
+      case 'blop3':
+        this.playSample(this.soundType, time, volume);
+        break;
+
+      case 'mellow':
+        this.playSample('mellow', time, volume);
+        break;
+
+      case 'pluck': {
+        const oscP1 = this.ctx.createOscillator();
+        const gainP1 = this.ctx.createGain();
+        oscP1.type = 'sine';
+        oscP1.frequency.setValueAtTime(880 * pitchMultiplier, time);
+        gainP1.gain.setValueAtTime(volume * 1.4, time);
+        gainP1.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+
+        const oscP2 = this.ctx.createOscillator();
+        const gainP2 = this.ctx.createGain();
+        oscP2.type = 'sine';
+        oscP2.frequency.setValueAtTime(440 * pitchMultiplier, time);
+        gainP2.gain.setValueAtTime(volume * 0.8, time);
+        gainP2.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+
+        oscP1.connect(gainP1);
+        gainP1.connect(this.metronomeGain);
+        oscP2.connect(gainP2);
+        gainP2.connect(this.metronomeGain);
+
+        oscP1.start(time);
+        oscP1.stop(time + 0.07);
+        oscP2.start(time);
+        oscP2.stop(time + 0.09);
+        break;
+      }
+
+      case 'shaker': {
+        const shakerNoise = this.createNoiseBufferNode();
+        if (shakerNoise) {
+          const shakerFilter = this.ctx.createBiquadFilter();
+          shakerFilter.type = 'bandpass';
+          shakerFilter.frequency.setValueAtTime(4000, time);
+          shakerFilter.Q.setValueAtTime(1.5, time);
+          const shakerGain = this.ctx.createGain();
+          shakerNoise.connect(shakerFilter);
+          shakerFilter.connect(shakerGain);
+          shakerGain.connect(this.metronomeGain);
+          shakerGain.gain.setValueAtTime(volume * 0.6, time);
+          shakerGain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+          shakerNoise.start(time);
+          shakerNoise.stop(time + 0.05);
         }
+        break;
+      }
+
+      case 'rim':
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800 * pitchMultiplier, time);
+        gainNode.gain.setValueAtTime(volume * 1.5, time);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+
+        const rimNoise = this.createNoiseBufferNode();
+        if (rimNoise) {
+          const rimFilter = this.ctx.createBiquadFilter();
+          rimFilter.type = 'bandpass';
+          rimFilter.frequency.setValueAtTime(3000, time);
+          rimFilter.Q.setValueAtTime(3, time);
+          const rimGain = this.ctx.createGain();
+          rimNoise.connect(rimFilter);
+          rimFilter.connect(rimGain);
+          rimGain.connect(this.metronomeGain);
+          rimGain.gain.setValueAtTime(volume * 0.5, time);
+          rimGain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+          rimNoise.start(time);
+          rimNoise.stop(time + 0.04);
+        }
+
+        osc.start(time);
+        osc.stop(time + 0.04);
+        break;
+
+      case 'snare':
+        this.playSample('snare', time, volume);
+        break;
+
+      case 'maracas':
+        this.playSample('maracas', time, volume);
+        break;
+
+      case 'agogo': {
+        const agOsc1 = this.ctx.createOscillator();
+        const agGain1 = this.ctx.createGain();
+        agOsc1.type = 'sine';
+        agOsc1.frequency.setValueAtTime(800 * pitchMultiplier, time);
+        agGain1.gain.setValueAtTime(volume * 1.2, time);
+        agGain1.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+        agOsc1.connect(agGain1);
+        agGain1.connect(this.metronomeGain);
+
+        const agOsc2 = this.ctx.createOscillator();
+        const agGain2 = this.ctx.createGain();
+        agOsc2.type = 'sine';
+        agOsc2.frequency.setValueAtTime(1000 * pitchMultiplier, time);
+        agGain2.gain.setValueAtTime(volume * 0.7, time);
+        agGain2.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+        agOsc2.connect(agGain2);
+        agGain2.connect(this.metronomeGain);
+
+        agOsc1.start(time);
+        agOsc1.stop(time + 0.18);
+        agOsc2.start(time);
+        agOsc2.stop(time + 0.14);
+        break;
+      }
+
+      case 'tom_high':
+        this.playSample('tom_high', time, volume);
         break;
 
     }

@@ -1,4 +1,4 @@
-export type BeatSoundType = 'tick' | 'drum' | 'bass' | 'woodblock' | 'cowbell' | 'chime' | 'sub_boom' | 'double_bass' | 'hihat';
+export type BeatSoundType = 'tick' | 'drum' | 'bass' | 'woodblock' | 'cowbell' | 'chime' | 'sub_boom' | 'hihat' | 'blop1' | 'blop2' | 'blop3' | 'mellow' | 'pluck' | 'shaker' | 'rim' | 'snare' | 'maracas' | 'agogo' | 'tom_high';
 
 export type MusicStyle = 'none' | 'synthwave' | 'techno' | 'ambient' | 'custom' | 'ten_minutes' | 'animal';
 

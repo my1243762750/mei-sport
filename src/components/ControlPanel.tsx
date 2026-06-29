@@ -33,15 +33,25 @@ interface ControlPanelProps {
 const BPM_PRESETS = [160, 180, 200, 220];
 
 const SOUND_OPTIONS: { value: BeatSoundType; label: string }[] = [
-  { value: 'bass', label: 'Deep Bass (默认)' },
-  { value: 'sub_boom', label: '808 Sub Boom' },
-  { value: 'double_bass', label: 'Double Kick' },
-  { value: 'tick', label: 'Clear Tick' },
-  { value: 'drum', label: 'Kick' },
-  { value: 'woodblock', label: 'Wood' },
-  { value: 'cowbell', label: 'Bell' },
-  { value: 'chime', label: 'Chime' },
-  { value: 'hihat', label: 'Hi-Hat' },
+  { value: 'bass', label: 'Deep Bass (深沉贝斯)' },
+  { value: 'sub_boom', label: '808 Sub Boom (重低音鼓)' },
+  { value: 'tick', label: 'Clear Tick (清脆滴答)' },
+  { value: 'drum', label: 'Kick (大鼓)' },
+  { value: 'snare', label: 'Snare (小鼓)' },
+  { value: 'tom_high', label: 'Tom High (高音嗵)' },
+  { value: 'mellow', label: 'Soft Tom (柔嗵)' },
+  { value: 'woodblock', label: 'Wood (木鱼)' },
+  { value: 'cowbell', label: 'Bell (牛铃)' },
+  { value: 'agogo', label: 'Agogo (阿哥哥铃)' },
+  { value: 'chime', label: 'Chime (风铃)' },
+  { value: 'hihat', label: 'Hi-Hat (踩镲)' },
+  { value: 'blop1', label: 'Water Blop 1 (水泡1)' },
+  { value: 'blop2', label: 'Water Blop 2 (水泡2)' },
+  { value: 'blop3', label: 'Water Blop 3 (水泡3)' },
+  { value: 'pluck', label: 'Pluck (弹拨)' },
+  { value: 'shaker', label: 'Shaker (沙锤)' },
+  { value: 'maracas', label: 'Maracas (响板)' },
+  { value: 'rim', label: 'Rim (鼓边)' },
 ];
 
 const VISUAL_OPTIONS: { value: VisualStyle; label: string }[] = [
