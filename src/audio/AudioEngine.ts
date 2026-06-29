@@ -18,7 +18,7 @@ export class AudioEngine {
   private onTrackEndedCallback: (() => void) | null = null;
 
   // Master volumes
-  private metronomeVolume: number = 1.3;
+  private metronomeVolume: number = 0.75;
   private musicVolume: number = 0.35;
 
   // Synthesizer nodes/gains for mixing
@@ -69,7 +69,7 @@ export class AudioEngine {
     this.masterGain.connect(this.ctx.destination);
 
     this.metronomeGain = this.ctx.createGain();
-    this.metronomeGain.gain.setValueAtTime(this.metronomeVolume, this.ctx.currentTime);
+    this.metronomeGain.gain.setValueAtTime(1, this.ctx.currentTime);
     this.metronomeGain.connect(this.masterGain);
 
     this.musicGain = this.ctx.createGain();
@@ -111,7 +111,7 @@ export class AudioEngine {
     const src = this.ctx.createBufferSource();
     src.buffer = buffer;
     const sg = this.ctx.createGain();
-    sg.gain.setValueAtTime(volume * 1.5, time);
+    sg.gain.setValueAtTime(volume, time);
     src.connect(sg);
     sg.connect(this.metronomeGain);
     src.start(time);
@@ -231,10 +231,15 @@ export class AudioEngine {
   }
 
   public setMetronomeVolume(volume: number) {
-    this.metronomeVolume = Math.max(0, Math.min(2, volume));
+    this.metronomeVolume = Math.max(0, Math.min(1, volume));
     if (this.metronomeGain && this.ctx) {
-      this.metronomeGain.gain.setTargetAtTime(this.metronomeVolume * 1.5, this.ctx.currentTime, 0.01);
+      this.metronomeGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.metronomeGain.gain.setValueAtTime(1, this.ctx.currentTime);
     }
+  }
+
+  private getMetronomeGainValue() {
+    return this.metronomeVolume * this.metronomeVolume;
   }
 
   public setMusicVolume(volume: number) {
@@ -249,6 +254,41 @@ export class AudioEngine {
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
+  }
+
+  public playMilestoneCountdownCue() {
+    this.playCueTone([880], 0.11, 0.18);
+  }
+
+  public playMilestoneCompleteCue() {
+    this.playCueTone([880, 1174.66, 1567.98], 0.18, 0.26);
+  }
+
+  private playCueTone(frequencies: number[], noteDuration: number, volume: number) {
+    this.init();
+    if (!this.ctx || !this.masterGain) return;
+
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+
+    const startTime = this.ctx.currentTime + 0.01;
+    frequencies.forEach((frequency, index) => {
+      if (!this.ctx || !this.masterGain) return;
+      const toneStart = startTime + index * (noteDuration + 0.035);
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(frequency, toneStart);
+      gain.gain.setValueAtTime(volume, toneStart);
+      gain.gain.exponentialRampToValueAtTime(0.001, toneStart + noteDuration);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(toneStart);
+      osc.stop(toneStart + noteDuration + 0.02);
+    });
   }
 
   private scheduler = () => {
@@ -307,7 +347,8 @@ export class AudioEngine {
     osc.connect(gainNode);
     gainNode.connect(this.metronomeGain);
 
-    const volume = isAccent ? 1.0 : 0.7;
+    const volume = (isAccent ? 1.0 : 0.7) * this.getMetronomeGainValue();
+    if (volume <= 0.0001) return;
     const pitchMultiplier = isAccent ? 1.3 : 1.0;
 
     switch (this.soundType) {

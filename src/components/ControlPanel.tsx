@@ -33,32 +33,32 @@ interface ControlPanelProps {
 const BPM_PRESETS = [160, 180, 200, 220];
 
 const SOUND_OPTIONS: { value: BeatSoundType; label: string }[] = [
-  { value: 'bass', label: 'Deep Bass (深沉贝斯)' },
-  { value: 'sub_boom', label: '808 Sub Boom (重低音鼓)' },
-  { value: 'tick', label: 'Clear Tick (清脆滴答)' },
-  { value: 'drum', label: 'Kick (大鼓)' },
-  { value: 'snare', label: 'Snare (小鼓)' },
-  { value: 'tom_high', label: 'Tom High (高音嗵)' },
-  { value: 'mellow', label: 'Soft Tom (柔嗵)' },
-  { value: 'woodblock', label: 'Wood (木鱼)' },
-  { value: 'cowbell', label: 'Bell (牛铃)' },
-  { value: 'agogo', label: 'Agogo (阿哥哥铃)' },
-  { value: 'chime', label: 'Chime (风铃)' },
-  { value: 'hihat', label: 'Hi-Hat (踩镲)' },
-  { value: 'blop1', label: 'Water Blop 1 (水泡1)' },
-  { value: 'blop2', label: 'Water Blop 2 (水泡2)' },
-  { value: 'blop3', label: 'Water Blop 3 (水泡3)' },
-  { value: 'pluck', label: 'Pluck (弹拨)' },
-  { value: 'shaker', label: 'Shaker (沙锤)' },
-  { value: 'maracas', label: 'Maracas (响板)' },
-  { value: 'rim', label: 'Rim (鼓边)' },
+  { value: 'bass', label: '深沉贝斯' },
+  { value: 'sub_boom', label: '重低音鼓' },
+  { value: 'tick', label: '清脆滴答' },
+  { value: 'drum', label: '大鼓' },
+  { value: 'snare', label: '小鼓' },
+  { value: 'tom_high', label: '高音通鼓' },
+  { value: 'mellow', label: '柔和通鼓' },
+  { value: 'woodblock', label: '木鱼' },
+  { value: 'cowbell', label: '牛铃' },
+  { value: 'agogo', label: '阿哥哥铃' },
+  { value: 'chime', label: '风铃' },
+  { value: 'hihat', label: '踩镲' },
+  { value: 'blop1', label: '水泡 1' },
+  { value: 'blop2', label: '水泡 2' },
+  { value: 'blop3', label: '水泡 3' },
+  { value: 'pluck', label: '弹拨' },
+  { value: 'shaker', label: '沙锤' },
+  { value: 'maracas', label: '响板' },
+  { value: 'rim', label: '鼓边' },
 ];
 
 const VISUAL_OPTIONS: { value: VisualStyle; label: string }[] = [
-  { value: 'video', label: 'Video' },
-  { value: 'minimal', label: 'Pulse' },
-  { value: 'aurora', label: 'Aurora' },
-  { value: 'sunset', label: 'Track' },
+  { value: 'video', label: '视频' },
+  { value: 'minimal', label: '脉冲' },
+  { value: 'aurora', label: '极光' },
+  { value: 'sunset', label: '跑道' },
 ];
 
 const isAudioFile = (file: File) =>
@@ -96,9 +96,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 }) => {
   const [bpmInput, setBpmInput] = useState(String(bpm));
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editingBpmValue, setEditingBpmValue] = useState<string>('');
-  
-  // Drag and drop states for reordering
+  const [editingBpmValue, setEditingBpmValue] = useState('');
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [draggedItemType, setDraggedItemType] = useState<'audio' | 'video' | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -128,38 +126,28 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     return [...audio, ...video];
   }, [customPlaylist, currentTrackIndex, currentVideoIndex, videoPlaylist, visualStyle]);
 
-  const startEditingBpm = (item: typeof mediaItems[0], e: React.MouseEvent) => {
-    e.stopPropagation();
+  const startEditingBpm = (item: (typeof mediaItems)[number], event: React.MouseEvent) => {
+    event.stopPropagation();
     setEditingItemId(`${item.type}-${item.id}`);
     setEditingBpmValue(String(item.bpm ?? 180));
   };
 
-  const commitInlineBpm = (item: typeof mediaItems[0]) => {
+  const commitInlineBpm = (item: (typeof mediaItems)[number]) => {
     const nextBpm = Number.parseInt(editingBpmValue, 10);
     setEditingItemId(null);
-    if (Number.isNaN(nextBpm) || nextBpm < 50 || nextBpm > 350) {
-      return;
-    }
-    
+    if (Number.isNaN(nextBpm) || nextBpm < 50 || nextBpm > 350) return;
+
     if (item.type === 'audio') {
       setCustomPlaylist((prev) =>
-        prev.map((track) =>
-          track.id === item.id ? { ...track, originalBpm: nextBpm } : track
-        )
+        prev.map((track) => (track.id === item.id ? { ...track, originalBpm: nextBpm } : track)),
       );
-      if (item.active) {
-        setBpm(nextBpm);
-      }
     } else {
       setVideoPlaylist((prev) =>
-        prev.map((track) =>
-          track.id === item.id ? { ...track, detectedBpm: nextBpm } : track
-        )
+        prev.map((track) => (track.id === item.id ? { ...track, detectedBpm: nextBpm } : track)),
       );
-      if (item.active) {
-        setBpm(nextBpm);
-      }
     }
+
+    if (item.active) setBpm(nextBpm);
   };
 
   const handleDragStart = (type: 'audio' | 'video', index: number) => {
@@ -167,23 +155,21 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     setDraggedItemType(type);
   };
 
-  const handleDragOver = (e: React.DragEvent, type: 'audio' | 'video', index: number) => {
-    e.preventDefault();
-    if (draggedItemType !== type) return;
-    if (draggedItemIndex === index) return;
+  const handleDragOver = (event: React.DragEvent, type: 'audio' | 'video', index: number) => {
+    event.preventDefault();
+    if (draggedItemType !== type || draggedItemIndex === index) return;
     setDragOverIndex(index);
   };
 
   const handleDrop = (type: 'audio' | 'video', targetIndex: number) => {
     if (draggedItemIndex === null || draggedItemType !== type) return;
-    
+
     if (type === 'audio') {
       const newList = [...customPlaylist];
       const [draggedItem] = newList.splice(draggedItemIndex, 1);
       newList.splice(targetIndex, 0, draggedItem);
       setCustomPlaylist(newList);
-      
-      // Update active track index
+
       if (currentTrackIndex === draggedItemIndex) {
         setCurrentTrackIndex(targetIndex);
       } else if (currentTrackIndex > draggedItemIndex && currentTrackIndex <= targetIndex) {
@@ -196,8 +182,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       const [draggedItem] = newList.splice(draggedItemIndex, 1);
       newList.splice(targetIndex, 0, draggedItem);
       setVideoPlaylist(newList);
-      
-      // Update active video index
+
       if (currentVideoIndex === draggedItemIndex) {
         setCurrentVideoIndex(targetIndex);
       } else if (currentVideoIndex > draggedItemIndex && currentVideoIndex <= targetIndex) {
@@ -206,7 +191,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         setCurrentVideoIndex(currentVideoIndex + 1);
       }
     }
-    
+
     setDraggedItemIndex(null);
     setDraggedItemType(null);
     setDragOverIndex(null);
@@ -238,7 +223,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         try {
           detectedBpm = await detectBpmFromAudioUrl(url);
         } catch (error) {
-          console.error('Error detecting uploaded music BPM:', error);
+          console.error('检测上传音乐 BPM 失败:', error);
         }
 
         return {
@@ -268,7 +253,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         try {
           detectedBpm = await detectBpmFromAudioUrl(url);
         } catch (error) {
-          console.error('Error detecting uploaded video BPM:', error);
+          console.error('检测上传视频 BPM 失败:', error);
         }
 
         return {
@@ -284,9 +269,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     if (newVideos.length > 0) {
       setVisualStyle('video');
       setCurrentVideoIndex(videoPlaylist.length);
-      if (newVideos[0].detectedBpm) {
-        setBpm(newVideos[0].detectedBpm);
-      }
+      if (newVideos[0].detectedBpm) setBpm(newVideos[0].detectedBpm);
     }
   };
 
@@ -295,28 +278,20 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     const audioFiles = files.filter(isAudioFile);
     const videoFiles = files.filter(isVideoFile);
 
-    if (audioFiles.length > 0) {
-      await importAudioFiles(audioFiles);
-    }
-    if (videoFiles.length > 0) {
-      await importVideoFiles(videoFiles);
-    }
+    if (audioFiles.length > 0) await importAudioFiles(audioFiles);
+    if (videoFiles.length > 0) await importVideoFiles(videoFiles);
 
     event.target.value = '';
   };
 
   const removeAudioTrack = (id: string, index: number) => {
     setCustomPlaylist((prev) => prev.filter((track) => track.id !== id));
-    if (index === currentTrackIndex) {
-      setCurrentTrackIndex(Math.max(0, currentTrackIndex - 1));
-    }
+    if (index === currentTrackIndex) setCurrentTrackIndex(Math.max(0, currentTrackIndex - 1));
   };
 
   const removeVideoTrack = (id: string, index: number) => {
     setVideoPlaylist((prev) => prev.filter((track) => track.id !== id));
-    if (index === currentVideoIndex) {
-      setCurrentVideoIndex(Math.max(0, currentVideoIndex - 1));
-    }
+    if (index === currentVideoIndex) setCurrentVideoIndex(Math.max(0, currentVideoIndex - 1));
   };
 
   const playMediaItem = (item: (typeof mediaItems)[number]) => {
@@ -327,9 +302,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
     setCurrentVideoIndex(item.index);
     setVisualStyle('video');
-    if (item.bpm) {
-      setBpm(item.bpm);
-    }
+    if (item.bpm) setBpm(item.bpm);
   };
 
   const removeMediaItem = (item: (typeof mediaItems)[number]) => {
@@ -344,13 +317,13 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     <div className="panel-card control-panel-flat">
       <label className="media-upload-button">
         <span className="media-upload-icon">+</span>
-        <span>Upload File</span>
+        <span>上传文件</span>
         <input type="file" accept="audio/*,video/*" multiple onChange={handleFileUpload} />
       </label>
 
       <section className="control-section bpm-compact-section">
         <div className="compact-section-header">
-          <span>Cadence</span>
+          <span>步频</span>
           <strong>{bpm} BPM</strong>
         </div>
 
@@ -398,8 +371,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
       <section className="control-section">
         <div className="compact-section-header">
-          <span>Visual</span>
-          <strong>{VISUAL_OPTIONS.find((item) => item.value === visualStyle)?.label ?? 'Custom'}</strong>
+          <span>画面</span>
+          <strong>{VISUAL_OPTIONS.find((item) => item.value === visualStyle)?.label ?? '自定义'}</strong>
         </div>
         <div className="visual-compact-grid">
           {VISUAL_OPTIONS.map((option) => (
@@ -417,7 +390,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
       <section className="control-section settings-grid">
         <label className="compact-field">
-          <span>Beat</span>
+          <span>鼓点</span>
           <select value={soundType} onChange={(event) => setSoundType(event.target.value as BeatSoundType)}>
             {SOUND_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -426,19 +399,20 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </label>
 
         <label className="compact-field">
-          <span>Click</span>
+          <span>鼓点音量</span>
           <input
             type="range"
             min="0"
             max="1"
-            step="0.05"
+            step="0.01"
             value={metronomeVolume}
+            onInput={(event) => setMetronomeVolume(Number.parseFloat(event.currentTarget.value))}
             onChange={(event) => setMetronomeVolume(Number.parseFloat(event.target.value))}
           />
         </label>
 
         <label className="compact-field">
-          <span>Audio</span>
+          <span>音乐</span>
           <input
             type="range"
             min="0"
@@ -450,7 +424,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </label>
 
         <label className="compact-field">
-          <span>Video</span>
+          <span>视频</span>
           <input
             type="range"
             min="0"
@@ -467,42 +441,39 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           className={`compact-choice mute-choice ${videoMuted ? 'active' : ''}`}
           onClick={() => setVideoMuted(!videoMuted)}
         >
-          {videoMuted ? 'Video Muted' : 'Video Sound'}
+          {videoMuted ? '视频已静音' : '视频有声'}
         </button>
       </section>
 
       <section className="control-section media-section">
         <div className="compact-section-header">
-          <span>Files</span>
+          <span>文件</span>
           <strong>{mediaItems.length}</strong>
         </div>
 
         <div className="media-list">
           {mediaItems.length === 0 ? (
-            <div className="media-empty">Upload audio or video files here.</div>
+            <div className="media-empty">上传音乐或视频文件</div>
           ) : (
             mediaItems.map((item) => {
               const isDragging = draggedItemIndex === item.index && draggedItemType === item.type;
               const isHoveredOver = dragOverIndex === item.index && draggedItemType === item.type;
-              
+
               return (
                 <div
                   key={`${item.type}-${item.id}`}
                   className={`media-row ${item.active ? 'active' : ''} ${isDragging ? 'dragging' : ''} ${isHoveredOver ? 'drag-over' : ''}`}
                   draggable
                   onDragStart={() => handleDragStart(item.type, item.index)}
-                  onDragOver={(e) => handleDragOver(e, item.type, item.index)}
+                  onDragOver={(event) => handleDragOver(event, item.type, item.index)}
                   onDrop={() => handleDrop(item.type, item.index)}
                   onDragEnd={handleDragEnd}
                   onDoubleClick={() => playMediaItem(item)}
-                  style={{
-                    opacity: isDragging ? 0.4 : 1.0,
-                    cursor: 'grab',
-                  }}
+                  style={{ opacity: isDragging ? 0.4 : 1, cursor: 'grab' }}
                 >
                   <button type="button" className="media-main" onClick={() => playMediaItem(item)}>
-                    <span className="media-type" style={{ fontSize: '0.58rem', opacity: 0.6 }}>
-                      {item.type === 'audio' ? '🎵' : '🎬'}
+                    <span className="media-type">
+                      {item.type === 'audio' ? '音' : '视'}
                     </span>
                     <span className="media-name">{item.name}</span>
                     {item.bpm && (
@@ -511,28 +482,24 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                           type="number"
                           className="media-bpm-input"
                           value={editingBpmValue}
-                          onChange={(e) => setEditingBpmValue(e.target.value)}
+                          onChange={(event) => setEditingBpmValue(event.target.value)}
                           onBlur={() => commitInlineBpm(item)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              commitInlineBpm(item);
-                            } else if (e.key === 'Escape') {
-                              setEditingItemId(null);
-                            }
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') commitInlineBpm(item);
+                            if (event.key === 'Escape') setEditingItemId(null);
                           }}
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(event) => event.stopPropagation()}
                           autoFocus
                           min={50}
                           max={350}
                         />
                       ) : (
-                        <span 
-                          className="media-bpm editable" 
-                          onClick={(e) => startEditingBpm(item, e)}
-                          title="点击行内修改 BPM"
-                          style={{ cursor: 'pointer', opacity: 0.85 }}
+                        <span
+                          className="media-bpm editable"
+                          onClick={(event) => startEditingBpm(item, event)}
+                          title="点击修改 BPM"
                         >
-                          {item.bpm} ✏️
+                          {item.bpm}
                         </span>
                       )
                     )}

@@ -8,11 +8,15 @@ import { RunStatsOverlay } from './components/RunStatsOverlay';
 
 const DEFAULT_TRACKS: Track[] = [];
 
+type RewardNotice =
+  | { type: 'countdown'; targetMinutes: number; remainingSeconds: number }
+  | { type: 'complete'; targetMinutes: number };
+
 export default function App() {
   const [bpm, setBpm] = useState(180);
   const [soundType, setSoundType] = useState<BeatSoundType>('bass');
   const [musicStyle, setMusicStyle] = useState<MusicStyle>('none');
-  const [metronomeVolume, setMetronomeVolume] = useState(1.3);
+  const [metronomeVolume, setMetronomeVolume] = useState(0.75);
   const [musicVolume, setMusicVolume] = useState(0.35);
   const [isPlaying, setIsPlaying] = useState(false);
   const [beatTrigger, setBeatTrigger] = useState(0);
@@ -25,6 +29,7 @@ export default function App() {
   const [videoVolume, setVideoVolume] = useState(0.4);
   const [isVideoCovered, setIsVideoCovered] = useState(false);
   const [showSidePanel, setShowSidePanel] = useState(true);
+  const [rewardNotice, setRewardNotice] = useState<RewardNotice | null>(null);
   const [stats, setStats] = useState<RunningStats>({
     isPlaying: false,
     bpm: 180,
@@ -36,6 +41,7 @@ export default function App() {
 
   const audioEngineRef = useRef<AudioEngine | null>(null);
   const lastPlayedUrlRef = useRef('');
+  const playedRewardCuesRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     audioEngineRef.current = new AudioEngine();
@@ -97,9 +103,56 @@ export default function App() {
     audioEngineRef.current?.setMusicVolume(musicVolume);
   }, [musicVolume]);
 
+  const handleMetronomeVolumeChange = (volume: number) => {
+    setMetronomeVolume(volume);
+    audioEngineRef.current?.setMetronomeVolume(volume);
+  };
+
   useEffect(() => {
     if (musicStyle === 'custom') playCurrentCustomTrack();
   }, [currentTrackIndex, customPlaylist]);
+
+  useEffect(() => {
+    if (!isPlaying || stats.elapsedTime <= 0) return;
+
+    const milestoneInterval = 600;
+    const nextTarget = Math.ceil(stats.elapsedTime / milestoneInterval) * milestoneInterval;
+    const remainingSeconds = nextTarget - stats.elapsedTime;
+
+    if (remainingSeconds >= 1 && remainingSeconds <= 4) {
+      const cueKey = `countdown-${nextTarget}-${remainingSeconds}`;
+      if (!playedRewardCuesRef.current.has(cueKey)) {
+        playedRewardCuesRef.current.add(cueKey);
+        audioEngineRef.current?.playMilestoneCountdownCue();
+      }
+      setRewardNotice({
+        type: 'countdown',
+        targetMinutes: nextTarget / 60,
+        remainingSeconds,
+      });
+      return;
+    }
+
+    if (stats.elapsedTime % milestoneInterval === 0) {
+      const cueKey = `complete-${stats.elapsedTime}`;
+      if (!playedRewardCuesRef.current.has(cueKey)) {
+        playedRewardCuesRef.current.add(cueKey);
+        audioEngineRef.current?.playMilestoneCompleteCue();
+      }
+      setRewardNotice({
+        type: 'complete',
+        targetMinutes: stats.elapsedTime / 60,
+      });
+    }
+  }, [isPlaying, stats.elapsedTime]);
+
+  useEffect(() => {
+    if (!rewardNotice) return;
+
+    const clearDelay = rewardNotice.type === 'complete' ? 6000 : 980;
+    const timer = window.setTimeout(() => setRewardNotice(null), clearDelay);
+    return () => window.clearTimeout(timer);
+  }, [rewardNotice]);
 
   useEffect(() => {
     let interval: number | null = null;
@@ -206,6 +259,8 @@ export default function App() {
   };
 
   const handleResetStats = () => {
+    playedRewardCuesRef.current.clear();
+    setRewardNotice(null);
     setStats({
       isPlaying,
       bpm,
@@ -255,7 +310,7 @@ export default function App() {
               setIsVideoCovered={setIsVideoCovered}
             />
             <LeftRightFootGuide isPlaying={isPlaying} beatTrigger={beatTrigger} />
-            <RunStatsOverlay stats={stats} resetStats={handleResetStats} />
+            <RunStatsOverlay stats={stats} resetStats={handleResetStats} rewardNotice={rewardNotice} />
           </div>
         </section>
 
@@ -267,7 +322,7 @@ export default function App() {
             setSoundType={setSoundType}
             setMusicStyle={setMusicStyle}
             metronomeVolume={metronomeVolume}
-            setMetronomeVolume={setMetronomeVolume}
+            setMetronomeVolume={handleMetronomeVolumeChange}
             musicVolume={musicVolume}
             setMusicVolume={setMusicVolume}
             customPlaylist={customPlaylist}

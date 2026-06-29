@@ -1,8 +1,13 @@
 import type { RunningStats } from '../types';
 
+type RewardNotice =
+  | { type: 'countdown'; targetMinutes: number; remainingSeconds: number }
+  | { type: 'complete'; targetMinutes: number };
+
 interface RunStatsOverlayProps {
   stats: RunningStats;
   resetStats: () => void;
+  rewardNotice?: RewardNotice | null;
 }
 
 const formatTime = (seconds: number) => {
@@ -21,16 +26,32 @@ const getNextMilestone = (currentSteps: number) => {
   return { target: next, progress };
 };
 
-export const RunStatsOverlay: React.FC<RunStatsOverlayProps> = ({ stats, resetStats }) => {
+export const RunStatsOverlay: React.FC<RunStatsOverlayProps> = ({ stats, resetStats, rewardNotice }) => {
   const distanceKm = ((stats.steps * 0.8) / 1000).toFixed(2);
   const milestone = getNextMilestone(stats.steps);
 
   return (
-    <aside className="run-stats-overlay" aria-label="跑步实时数据">
+    <aside className={`run-stats-overlay ${rewardNotice ? 'reward-mode' : ''}`} aria-label="跑步实时数据">
       <div className="run-stats-header">
-        <span>实时数据</span>
+        <span>{rewardNotice ? '里程碑播报' : '实时数据'}</span>
         <button type="button" onClick={resetStats}>重置</button>
       </div>
+
+      {rewardNotice && (
+        <div className={`reward-message ${rewardNotice.type}`}>
+          {rewardNotice.type === 'countdown' ? (
+            <>
+              <strong>距离 {rewardNotice.targetMinutes} 分钟还差 {rewardNotice.remainingSeconds} 秒</strong>
+              <span>准备冲过这一段</span>
+            </>
+          ) : (
+            <>
+              <strong>{rewardNotice.targetMinutes} 分钟达成</strong>
+              <span>节奏很稳，继续保持呼吸</span>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="run-stats-grid">
         <div className="run-stat-chip">

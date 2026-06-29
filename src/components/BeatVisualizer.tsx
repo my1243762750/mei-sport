@@ -1216,8 +1216,8 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
         subText = 'HALT ENGINE';
         subColor = '#f43f5e';
       } else {
-        mainText = isPlaying ? 'RUNNING' : 'READY';
-        subText = isPlaying ? 'METRIC SYNCED' : 'SYSTEM IDLE';
+        mainText = isPlaying ? '跑步中' : '准备';
+        subText = isPlaying ? '节奏同步' : '点击开始';
         subColor = isPlaying 
           ? (isVideoMode ? '#34d399' : getBpmThemeColor(bpm, 0.95))
           : 'rgba(255, 255, 255, 0.75)';
