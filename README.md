@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/runbeat-logo.svg" alt="RunBeat Logo" width="128" height="128">
+</p>
+
 # RunBeat
 
 跑步节奏训练 Web App：用可视化节拍、音乐同步和实时运动数据，帮你把步频练得更稳。
