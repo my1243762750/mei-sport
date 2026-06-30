@@ -1208,12 +1208,12 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
       let subColor = '';
 
       if (!isPlaying && isHoveringCoreRef.current) {
-        mainText = '▶ START';
-        subText = 'INITIALIZE TRAIN';
+        mainText = '开始';
+        subText = '点击开始训练';
         subColor = isVideoMode ? '#6ee7b7' : '#fbbf24';
       } else if (isPlaying && isHoveringCoreRef.current) {
-        mainText = '⏹ STOP';
-        subText = 'HALT ENGINE';
+        mainText = '暂停';
+        subText = '点击暂停训练';
         subColor = '#f43f5e';
       } else {
         mainText = isPlaying ? '跑步中' : '准备';
@@ -1223,10 +1223,26 @@ export const BeatVisualizer: React.FC<BeatVisualizerProps> = ({
           : 'rgba(255, 255, 255, 0.75)';
       }
 
+      if (!isPlaying && isHoveringCoreRef.current) {
+        mainText = '开始';
+        subText = '点击开始训练';
+        subColor = isVideoMode ? '#6ee7b7' : '#fbbf24';
+      } else if (isPlaying && isHoveringCoreRef.current) {
+        mainText = '暂停';
+        subText = '点击暂停训练';
+        subColor = '#f43f5e';
+      } else {
+        mainText = isPlaying ? '跑步中' : '准备';
+        subText = isPlaying ? '节奏同步' : '点击开始';
+        subColor = isPlaying
+          ? (isVideoMode ? '#34d399' : getBpmThemeColor(bpm, 0.95))
+          : 'rgba(255, 255, 255, 0.75)';
+      }
+
       ctx.fillText(mainText, centerX, centerY - 6);
 
       ctx.fillStyle = subColor;
-      ctx.font = `800 11px monospace`;
+      ctx.font = `800 13px system-ui, sans-serif`;
       ctx.fillText(subText, centerX, centerY + 24);
 
       ctx.strokeStyle = subColor;
